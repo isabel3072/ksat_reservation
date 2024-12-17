@@ -5,56 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>윤예원T 클리닉 예약 시스템</title>
     <style>
-        /* 간단한 스타일링 */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-            background-color: #f9f9f9;
-        }
-        h1 {
-            margin-top: 20px;
-        }
-        .day-section {
-            margin: 30px auto;
-            max-width: 800px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 20px;
-            background-color: #fff;
-        }
-        button {
-            margin: 5px;
-            padding: 10px;
-            min-width: 70px;
-            font-size: 14px;
-            color: white;
-            background-color: #007bff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f9f9f9; }
+        h1 { margin-top: 20px; }
+        .day-section { margin: 30px auto; max-width: 800px; border: 1px solid #ddd; border-radius: 10px; padding: 20px; background-color: #fff; }
+        button { margin: 5px; padding: 10px; min-width: 70px; color: white; background-color: #007bff; border: none; border-radius: 5px; cursor: pointer; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
     <h1>윤예원T 클리닉 예약 시스템</h1>
     <div id="schedule"></div>
 
-    <!-- Firebase SDK 추가 -->
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-        // Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
             authDomain: "reservation-ksat.firebaseapp.com",
@@ -62,16 +28,82 @@
             projectId: "reservation-ksat",
             storageBucket: "reservation-ksat.appspot.com",
             messagingSenderId: "784207883358",
-            appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf",
-            measurementId: "G-ZQDXBEPDN2"
+            appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf"
         };
 
-        // Firebase 초기화 및 데이터베이스 전역 변수 설정
         const app = initializeApp(firebaseConfig);
-        window.database = getDatabase(app);
-    </script>
+        const db = getDatabase(app);
 
-    <!-- 예약 시스템 로직 -->
-    <script type="module" src="app.js"></script>
+        const settingsRef = ref(db, "settings");
+        const reservationsRef = ref(db, "reservations");
+
+        function generateTimeSlots(day, container) {
+            let [startHour, startMin] = day.start.split(":").map(Number);
+            let [endHour, endMin] = day.end.split(":").map(Number);
+
+            while (startHour < endHour || (startHour === endHour && startMin < endMin)) {
+                const time = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`;
+                const button = document.createElement("button");
+                button.textContent = time;
+
+                onValue(reservationsRef, (snapshot) => {
+                    const reservations = snapshot.val() || {};
+                    if (reservations[`${day.date}-${time}`]) {
+                        button.innerHTML = `${time}<br>${reservations[`${day.date}-${time}`]}`;
+                        button.disabled = true;
+                    } else {
+                        button.disabled = false;
+                        button.innerHTML = time;
+                    }
+                });
+
+                button.addEventListener("click", () => reserveSlot(day.date, time));
+                container.appendChild(button);
+
+                startMin += 20;
+                if (startMin >= 60) {
+                    startHour++;
+                    startMin = 0;
+                }
+            }
+        }
+
+        function reserveSlot(date, time) {
+            const name = prompt("이름을 입력하세요:");
+            if (!name) return;
+
+            const slotKey = `${date}-${time}`;
+            get(ref(db, `reservations/${slotKey}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    alert("이미 예약된 시간입니다.");
+                } else {
+                    set(ref(db, `reservations/${slotKey}`), name);
+                    alert("예약이 완료되었습니다.");
+                }
+            });
+        }
+
+        function loadSchedule() {
+            get(settingsRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const settings = snapshot.val();
+                    document.querySelector("h1").textContent = `${settings.week}주차 클리닉 예약`;
+                    const scheduleContainer = document.getElementById("schedule");
+
+                    settings.days.forEach((day, index) => {
+                        const section = document.createElement("div");
+                        section.className = "day-section";
+                        section.innerHTML = `<h2>${day.date} (${day.name})</h2>`;
+                        const slotContainer = document.createElement("div");
+                        section.appendChild(slotContainer);
+                        generateTimeSlots(day, slotContainer);
+                        scheduleContainer.appendChild(section);
+                    });
+                }
+            });
+        }
+
+        window.onload = loadSchedule;
+    </script>
 </body>
 </html>
