@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
 import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-// Firebase 설정
 const firebaseConfig = {
     apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
     authDomain: "reservation-ksat.firebaseapp.com",
@@ -16,10 +15,12 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const settingsRef = ref(db, "settings");
 
+// 설정 저장 버튼 클릭 이벤트
 document.getElementById("saveSettings").addEventListener("click", () => {
     const weekNumber = document.getElementById("weekNumber").value;
     const allowedDate = document.getElementById("allowedDate").value;
 
+    // 요일 및 시간대 수집
     const days = [];
     document.querySelectorAll(".day-row").forEach((row, index) => {
         days.push({
@@ -30,6 +31,7 @@ document.getElementById("saveSettings").addEventListener("click", () => {
         });
     });
 
+    // Firebase에 저장
     set(settingsRef, {
         week: weekNumber,
         allowedDate: allowedDate,
