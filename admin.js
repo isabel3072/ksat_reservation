@@ -16,7 +16,6 @@ const db = getDatabase(app);
 const settingsRef = ref(db, "settings");
 const reservationsRef = ref(db, "reservations");
 
-// 요소 참조
 const weekNumberInput = document.getElementById("weekNumber");
 const allowedDateInput = document.getElementById("allowedDate");
 const daySettingsContainer = document.getElementById("daySettings");
@@ -33,7 +32,6 @@ let dayIndex = 0;
 
 // 요일 추가
 addDayButton.addEventListener("click", () => createDayRow(dayIndex++));
-
 function createDayRow(index, day = {}) {
     const row = document.createElement("div");
     row.className = "day-row";
@@ -66,44 +64,6 @@ function loadSettings() {
     });
 }
 
-// 예약 조회
-loadReservationsButton.addEventListener("click", () => {
-    const date = reservationDateInput.value;
-    reservationListContainer.innerHTML = "<p>로딩 중...</p>";
-    get(reservationsRef).then((snapshot) => {
-        const reservations = snapshot.val();
-        const filtered = Object.entries(reservations || {}).filter(([key]) => key.startsWith(date));
-        reservationListContainer.innerHTML = filtered.map(([key, name]) =>
-            `<div>${key.split("-")[1]}: ${name} <button onclick="removeReservation('${key}')">삭제</button></div>`
-        ).join("") || "<p>예약이 없습니다.</p>";
-    });
-});
-
-window.removeReservation = (key) => remove(ref(db, `reservations/${key}`)).then(() => alert("삭제 완료!"));
-
-// 초기화 버튼: settings와 reservations 삭제
-resetButton.addEventListener("click", () => {
-    if (confirm("정말 모든 설정과 예약을 초기화하시겠습니까?")) {
-        Promise.all([remove(settingsRef), remove(reservationsRef)])
-            .then(() => {
-                alert("모든 설정과 예약이 초기화되었습니다.");
-                loadSettings();
-            })
-            .catch((error) => console.error("초기화 오류:", error));
-    }
-});
-
-// 설정 저장
-saveButton.addEventListener("click", () => {
-    const days = [...daySettingsContainer.children].map((row, i) => ({
-        date: row.querySelector(`#date-${i}`).value,
-        name: row.querySelector(`#name-${i}`).value,
-        start: row.querySelector(`#start-${i}`).value,
-        end: row.querySelector(`#end-${i}`).value,
-    }));
-    set(settingsRef, { week: weekNumberInput.value, allowedDate: allowedDateInput.value, days });
-});
-
 // 예약 표 다운로드
 downloadTableButton.addEventListener("click", () => {
     get(settingsRef).then((settingsSnapshot) => {
@@ -111,7 +71,7 @@ downloadTableButton.addEventListener("click", () => {
             const settings = settingsSnapshot.val();
             const reservations = reservationsSnapshot.val() || {};
             renderTable(settings.days, reservations);
-            downloadTableAsImage();
+            setTimeout(() => downloadTableAsImage(), 500); // 캡처 타이밍 조정
         });
     });
 });
@@ -121,33 +81,31 @@ function renderTable(days, reservations) {
     tableContainer.innerHTML = "";
     const table = document.createElement("table");
 
+    // 모든 시간대 수집 및 정렬
+    const timeSlots = new Set();
+    days.forEach(day => {
+        let [hour, minute] = day.start.split(":").map(Number);
+        const [endHour, endMinute] = day.end.split(":").map(Number);
+        while (hour < endHour || (hour === endHour && minute < endMinute)) {
+            timeSlots.add(`${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`);
+            minute += 20;
+            if (minute >= 60) { hour++; minute = 0; }
+        }
+    });
+    const sortedTimeSlots = Array.from(timeSlots).sort();
+
     // 테이블 헤더
     const headerRow = document.createElement("tr");
     headerRow.innerHTML = `<th>시간대</th>` + days.map(day => `<th>${day.date} (${day.name})</th>`).join("");
     table.appendChild(headerRow);
 
-    // 시간대 생성
-    const timeSlots = [];
-    days.forEach(day => {
-        let [hour, minute] = day.start.split(":").map(Number);
-        const [endHour, endMinute] = day.end.split(":").map(Number);
-        while (hour < endHour || (hour === endHour && minute < endMinute)) {
-            const time = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-            if (!timeSlots.includes(time)) timeSlots.push(time);
-            minute += 20;
-            if (minute >= 60) {
-                hour++;
-                minute = 0;
-            }
-        }
-    });
-
     // 테이블 데이터
-    timeSlots.forEach(time => {
+    sortedTimeSlots.forEach(time => {
         const row = document.createElement("tr");
         row.innerHTML = `<td>${time}</td>` + days.map(day => {
             const key = `${day.date}-${time}`;
-            return `<td>${reservations[key] || ""}</td>`;
+            const isReserved = reservations[key];
+            return `<td style="background-color: ${isReserved ? '' : '#f0f0f0'}">${isReserved || ""}</td>`;
         }).join("");
         table.appendChild(row);
     });
@@ -158,12 +116,30 @@ function renderTable(days, reservations) {
 
 // PNG 다운로드
 function downloadTableAsImage() {
-    html2canvas(tableContainer).then(canvas => {
+    html2canvas(tableContainer, { scale: 2 }).then(canvas => {
         const link = document.createElement("a");
         link.download = "reservation_list.png";
         link.href = canvas.toDataURL("image/png");
         link.click();
     });
 }
+
+// 초기화 및 설정 저장
+resetButton.addEventListener("click", () => {
+    if (confirm("정말 모든 설정과 예약을 초기화하시겠습니까?")) {
+        Promise.all([remove(settingsRef), remove(reservationsRef)])
+            .then(() => { alert("모든 설정이 초기화되었습니다."); loadSettings(); })
+            .catch(error => console.error("초기화 오류:", error));
+    }
+});
+saveButton.addEventListener("click", () => {
+    const days = [...daySettingsContainer.children].map((row, i) => ({
+        date: row.querySelector(`#date-${i}`).value,
+        name: row.querySelector(`#name-${i}`).value,
+        start: row.querySelector(`#start-${i}`).value,
+        end: row.querySelector(`#end-${i}`).value,
+    }));
+    set(settingsRef, { week: weekNumberInput.value, allowedDate: allowedDateInput.value, days });
+});
 
 loadSettings();
