@@ -17,15 +17,20 @@ const db = getDatabase(app);
 const settingsRef = ref(db, "settings");
 
 // 전역 변수
-let allowedDate = null;
+let allowedDate = null; // 예약 가능한 날짜 설정값
+let isAllowedToday = false; // 오늘이 예약 가능한 날인지 여부
+
+// 한국 시간 기준 현재 날짜를 가져오는 함수
+function getCurrentKoreanDate() {
+    const now = new Date();
+    now.setHours(now.getHours() + 9); // UTC+9로 변환 (한국 시간)
+    return now.toISOString().split("T")[0]; // YYYY-MM-DD 형식 반환
+}
 
 // 시간 슬롯 생성 함수
 function generateTimeSlots(day, container) {
     let [startHour, startMin] = day.start.split(":").map(Number);
     let [endHour, endMin] = day.end.split(":").map(Number);
-
-    // 예약 가능한 날짜인지 확인
-    const isAllowedDay = day.date === allowedDate;
 
     while (startHour < endHour || (startHour === endHour && startMin < endMin)) {
         const time = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`;
@@ -34,25 +39,25 @@ function generateTimeSlots(day, container) {
 
         const slotRef = ref(db, `reservations/${day.date}-${time}`);
 
-        // 예약 상태 확인
+        // 예약 상태 확인 및 한국 시간 검증
         onValue(slotRef, (snapshot) => {
             if (snapshot.exists()) {
                 button.innerHTML = `${time}<br>${snapshot.val()}`;
                 button.disabled = true; // 이미 예약됨
-            } else if (isAllowedDay) {
-                button.disabled = false; // 예약 가능한 날짜
+            } else if (isAllowedToday) {
+                button.disabled = false; // 예약 가능한 날짜일 때 활성화
             } else {
-                button.disabled = true; // 예약 불가능한 날짜
+                button.disabled = true; // 예약 불가능
                 button.textContent = `${time} (예약 불가)`;
             }
         });
 
-        // 클릭 이벤트: 예약 가능 날짜에만 예약
+        // 예약 클릭 이벤트
         button.addEventListener("click", () => {
-            if (isAllowedDay) {
+            if (isAllowedToday) {
                 reserveSlot(day.date, time, button);
             } else {
-                alert("이 날짜는 예약할 수 없습니다.");
+                alert("오늘은 예약이 불가능한 날입니다.");
             }
         });
 
@@ -95,6 +100,9 @@ function loadSchedule() {
         if (snapshot.exists()) {
             const settings = snapshot.val();
             allowedDate = settings.allowedDate; // 예약 가능한 날짜 설정
+            const today = getCurrentKoreanDate(); // 한국 기준 오늘 날짜
+            isAllowedToday = today === allowedDate; // 오늘이 예약 가능한 날짜인지 확인
+
             document.querySelector("h1").textContent = `${settings.week || 1}주차 클리닉 예약`;
 
             settings.days.forEach((day) => {
