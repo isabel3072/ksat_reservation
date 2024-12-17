@@ -1,64 +1,45 @@
-/* 전체 폰트 변경 및 스타일 수정 */
 body {
-    font-family: 'Noto Sans KR', sans-serif;
-    margin: 0;
-    padding: 0;
+    font-family: Arial, sans-serif;
     text-align: center;
     background-color: #f9f9f9;
-    color: #333;
-}
-
-h1, h2 {
-    text-align: center;
-    margin: 20px 0;
 }
 
 h1 {
-    font-size: 28px;
-    font-weight: bold;
+    margin-top: 20px;
 }
 
-h2 {
-    font-size: 20px;
-    font-weight: 600;
+.day-section {
+    margin: 20px auto;
+    max-width: 800px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+    background-color: #fff;
 }
 
-.available-time {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 10px;
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* 최대 6개씩 한 줄에 표시 */
+    gap: 10px; /* 버튼 간 간격 */
+    margin-top: 10px;
 }
 
 button {
-    margin: 5px;
     padding: 10px;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 5px;
-    cursor: pointer;
     font-size: 14px;
-    text-align: center;
-    line-height: 1.5;
-    width: 100px;
-    height: 60px;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-button[disabled] {
-    background-color: #6c757d;
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #ccc;
     cursor: not-allowed;
-}
-
-/* 요일 구간 간격 추가 */
-.day-section {
-    margin-bottom: 40px; /* 요일 간격 추가 */
-}
-
-/* 버튼 그리드 */
-.time-slots {
-    display: grid;
-    grid-template-columns: repeat(6, 100px);
-    gap: 10px;
-    justify-content: center;
-    margin-top: 10px;
 }
