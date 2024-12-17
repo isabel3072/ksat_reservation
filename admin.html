@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>관리자 페이지</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        .day-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        input { padding: 5px; }
+        button { padding: 5px 10px; }
+    </style>
 </head>
 <body>
     <h1>관리자 페이지</h1>
@@ -12,7 +21,7 @@
     <!-- 주차 설정 -->
     <section>
         <h2>주차 설정</h2>
-        <label for="weekNumber">주차 (N): </label>
+        <label for="weekNumber">주차: </label>
         <input type="number" id="weekNumber" min="1" value="1">
     </section>
 
@@ -31,11 +40,9 @@
     </section>
 
     <!-- 버튼 -->
-    <section>
-        <button id="saveSettings">설정 저장</button>
-        <button id="reset">초기화</button>
-    </section>
+    <button id="saveSettings">설정 저장</button>
+    <button id="resetSettings">초기화</button> <!-- 초기화 버튼 추가 -->
 
-    <script src="admin.js"></script>
+    <script src="admin.js" type="module"></script>
 </body>
 </html>
