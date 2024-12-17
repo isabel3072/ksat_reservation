@@ -34,9 +34,12 @@ function generateTimeSlots(day, container) {
         onValue(slotRef, (snapshot) => {
             if (snapshot.exists()) {
                 button.innerHTML = `${time}<br>${snapshot.val()}`;
-                button.disabled = true;
+                button.disabled = true; // 이미 예약된 시간
+            } else if (isDateAllowed(day.date)) {
+                button.disabled = false;
             } else {
-                button.disabled = !isDateAllowed(day.date);
+                button.disabled = true; // 예약 가능한 날짜가 아니면 비활성화
+                button.textContent = `${time} (예약 불가)`;
             }
         });
 
@@ -44,7 +47,7 @@ function generateTimeSlots(day, container) {
             if (isDateAllowed(day.date)) {
                 reserveSlot(day.date, time, button);
             } else {
-                alert("예약 가능한 날짜가 아닙니다.");
+                alert("이 날짜는 예약할 수 없습니다.");
             }
         });
 
@@ -60,12 +63,7 @@ function generateTimeSlots(day, container) {
 
 // 예약 가능한 날짜 확인 함수
 function isDateAllowed(date) {
-    if (!allowedDate) return true; // allowedDate가 설정되지 않은 경우 제한 없음
-    const today = new Date();
-    const targetDate = new Date(date);
-    const allowed = new Date(allowedDate);
-
-    return targetDate.getTime() >= allowed.getTime();
+    return allowedDate === date; // 설정된 allowedDate와 일치하는 날짜만 true 반환
 }
 
 // 예약 함수
@@ -96,7 +94,7 @@ function loadSchedule() {
     onValue(settingsRef, (snapshot) => {
         if (snapshot.exists()) {
             const settings = snapshot.val();
-            allowedDate = settings.allowedDate; // 예약 가능한 날짜 가져오기
+            allowedDate = settings.allowedDate; // 예약 가능한 날짜 설정
             document.querySelector("h1").textContent = `${settings.week || 1}주차 클리닉 예약`;
 
             settings.days.forEach((day) => {
@@ -109,7 +107,7 @@ function loadSchedule() {
                 scheduleContainer.appendChild(section);
             });
         } else {
-            console.log("예약 설정 없음.");
+            console.log("예약 설정이 없습니다.");
         }
     });
 }
