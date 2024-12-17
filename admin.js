@@ -80,6 +80,9 @@ downloadTableButton.addEventListener("click", () => {
 function renderTable(days, reservations) {
     tableContainer.innerHTML = "";
     const table = document.createElement("table");
+    table.style.tableLayout = "auto"; // 각 셀의 내용에 맞게 열 너비 설정
+    table.style.width = "fit-content"; // 표 너비를 내용에 맞게 조정
+    table.style.margin = "0 auto"; // 표를 중앙 정렬
 
     // 모든 시간대 수집 및 정렬
     const timeSlots = new Set();
