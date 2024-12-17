@@ -5,12 +5,13 @@ import { getDatabase, ref, get, set, onValue, runTransaction } from "https://www
 const firebaseConfig = {
     apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
     authDomain: "reservation-ksat.firebaseapp.com",
-    databaseURL: "https://reservation-ksat-default-rtdb.firebaseio.com",
+    databaseURL: "https://reservation-ksat-default-rtdb.firebaseio.com/",
     projectId: "reservation-ksat",
     storageBucket: "reservation-ksat.appspot.com",
     messagingSenderId: "784207883358",
     appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf"
 };
+
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
