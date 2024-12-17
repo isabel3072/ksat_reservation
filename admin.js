@@ -70,33 +70,51 @@ window.removeDay = (index) => {
 };
 
 // 예약 데이터 불러오기 및 표시
-function showReservations(date) {
+window.showReservations = (date) => {
     const reservationsRef = ref(database, "reservations");
 
     get(reservationsRef).then((snapshot) => {
         const reservations = snapshot.val() || {};
-        const filteredReservations = Object.entries(reservations).filter(([key]) => key.startsWith(date));
+        const reservationEntries = Object.entries(reservations).filter(([key]) => key.startsWith(date));
 
-        if (filteredReservations.length === 0) {
+        if (reservationEntries.length === 0) {
             alert("해당 날짜에 예약된 항목이 없습니다.");
             return;
         }
 
+        // 예약 목록 표시
         let message = "예약 목록:\n";
-        filteredReservations.forEach(([key, value], index) => {
+        reservationEntries.forEach(([key, value], index) => {
             const time = key.split("-")[1];
             message += `${index + 1}. ${time} - ${value.name}\n`;
         });
 
-        const cancelIndex = prompt(`${message}\n취소할 예약 번호를 입력하세요 (취소하지 않으려면 취소).`);
-        if (cancelIndex) {
-            const [keyToCancel] = filteredReservations[Number(cancelIndex) - 1];
-            remove(ref(database, `reservations/${keyToCancel}`)).then(() => {
-                alert("예약이 취소되었습니다.");
-            });
+        // 취소할 예약 선택
+        const cancelIndex = prompt(`${message}\n취소할 예약 번호를 입력하세요 (취소하려면 빈칸으로 두세요):`);
+        if (cancelIndex && !isNaN(cancelIndex)) {
+            const targetIndex = Number(cancelIndex) - 1;
+            if (targetIndex >= 0 && targetIndex < reservationEntries.length) {
+                const [keyToCancel] = reservationEntries[targetIndex];
+                remove(ref(database, `reservations/${keyToCancel}`))
+                    .then(() => {
+                        alert("예약이 성공적으로 취소되었습니다.");
+                    })
+                    .catch((error) => {
+                        console.error("예약 삭제 오류:", error.message);
+                        alert("예약 삭제 중 오류가 발생했습니다. 다시 시도해주세요.");
+                    });
+            } else {
+                alert("잘못된 번호를 입력하셨습니다.");
+            }
+        } else {
+            alert("취소를 선택하셨습니다.");
         }
+    }).catch((error) => {
+        console.error("데이터 불러오기 오류:", error.message);
+        alert("예약 목록을 불러오는 중 오류가 발생했습니다.");
     });
-}
+};
+
 
 // 예약 관리 버튼 이벤트
 document.querySelectorAll(".manage-reservations").forEach((button) => {
