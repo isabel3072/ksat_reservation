@@ -4,9 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>관리자 페이지</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f9f9f9; }
-        h1 { margin-top: 20px; }
+        body {
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            text-align: center;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        h1, h2 {
+            color: #007bff;
+        }
         .day-row {
             display: flex;
             gap: 10px;
@@ -17,19 +28,39 @@
             background-color: #f0f0f0;
             max-width: 600px;
         }
-        input { padding: 5px; flex: 1; }
-        button { padding: 5px 10px; cursor: pointer; margin: 5px; }
-        button:hover { background-color: #007bff; color: #fff; }
-        .reservation-list {
-            margin: 20px auto;
-            max-width: 600px;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: left;
+        input, button {
+            padding: 5px;
+            margin: 5px;
         }
-        .reservation-item { display: flex; justify-content: space-between; margin: 5px 0; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 80%;
+            background-color: #fff;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -61,13 +92,14 @@
         <h2>예약 관리</h2>
         <input type="date" id="reservationDate" placeholder="날짜 선택">
         <button id="loadReservations">예약 조회</button>
-        <div id="reservationList" class="reservation-list"></div>
+        <div id="reservationList"></div>
     </section>
 
-    <!-- 버튼 -->
+    <!-- 예약 리스트 다운로드 -->
     <section>
-        <button id="saveSettings">설정 저장</button>
-        <button id="resetSettings">초기화</button>
+        <h2>예약 리스트 다운로드</h2>
+        <button id="downloadTable">표 다운로드</button>
+        <div id="tableContainer" class="hidden"></div>
     </section>
 
     <script type="module" src="admin.js"></script>
