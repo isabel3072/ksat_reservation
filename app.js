@@ -14,18 +14,23 @@ function updateTitle() {
 
 // 예약 저장 함수
 function saveReservation(date, time, name, button) {
-    const reservationKey = `${date}-${time}`;
+    const reservationKey = `${date}-${time}`; // 경로 키
     const reservationRef = ref(database, `reservations/${reservationKey}`);
 
+    console.log("Firebase 저장 경로:", `reservations/${reservationKey}`);
+    console.log("저장할 데이터:", { name: name, time: time });
+
+    // 예약 데이터 저장
     set(reservationRef, { name: name, time: time })
         .then(() => {
+            console.log("예약 저장 성공");
             alert("예약이 완료되었습니다.");
             button.innerHTML = `${time}<br>${name}`;
             button.disabled = true;
         })
         .catch((error) => {
-            console.error("Firebase 저장 오류:", error);
-            alert("예약 저장에 실패했습니다. 다시 시도해 주세요.");
+            console.error("Firebase 저장 오류:", error.message);
+            alert("예약 저장에 실패했습니다. 다시 시도해주세요.");
         });
 }
 
