@@ -1,6 +1,5 @@
-// Firebase 모듈 가져오기
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getDatabase, ref, get, set, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 // Firebase 설정
 const firebaseConfig = {
@@ -15,9 +14,36 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
 const settingsRef = ref(db, "settings");
-const reservationsRef = ref(db, "reservations");
+
+// 스케줄 데이터를 불러오고 화면에 반영하는 함수
+function loadSchedule() {
+    const scheduleContainer = document.getElementById("schedule");
+    scheduleContainer.innerHTML = ""; // 기존 내용 초기화
+
+    // 실시간으로 'settings' 데이터 변경 감지
+    onValue(settingsRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const settings = snapshot.val();
+            document.querySelector("h1").textContent = `${settings.week || 1}주차 클리닉 예약`;
+
+            settings.days.forEach((day, index) => {
+                const section = document.createElement("div");
+                section.className = "day-section";
+                section.innerHTML = `<h2>${day.date} (${day.name})</h2>`;
+
+                const slotContainer = document.createElement("div");
+                section.appendChild(slotContainer);
+                generateTimeSlots(day, slotContainer);
+                scheduleContainer.appendChild(section);
+            });
+        } else {
+            console.log("예약 설정이 없습니다.");
+        }
+    }, (error) => {
+        console.error("Firebase 데이터 로딩 실패:", error);
+    });
+}
 
 // 시간 슬롯 생성 함수
 function generateTimeSlots(day, container) {
@@ -31,7 +57,7 @@ function generateTimeSlots(day, container) {
 
         const slotRef = ref(db, `reservations/${day.date}-${time}`);
 
-        // 실시간 예약 상태 확인
+        // 예약 상태 실시간 감지
         onValue(slotRef, (snapshot) => {
             if (snapshot.exists()) {
                 button.innerHTML = `${time}<br>${snapshot.val()}`;
@@ -42,7 +68,7 @@ function generateTimeSlots(day, container) {
             }
         });
 
-        // 예약 버튼 클릭 이벤트
+        // 예약 처리
         button.addEventListener("click", () => reserveSlot(day.date, time, button));
         container.appendChild(button);
 
@@ -54,7 +80,7 @@ function generateTimeSlots(day, container) {
     }
 }
 
-// 예약 함수: Firebase 트랜잭션을 사용해 중복 예약 방지
+// 예약 함수
 function reserveSlot(date, time, button) {
     const name = prompt("이름을 입력하세요:");
     if (!name) return;
@@ -72,33 +98,9 @@ function reserveSlot(date, time, button) {
             alert("예약이 완료되었습니다.");
         }
     }).catch((error) => {
-        console.error("예약 중 오류 발생:", error);
+        console.error("예약 오류:", error);
     });
 }
 
-// 스케줄 로드 및 화면 표시
-function loadSchedule() {
-    get(settingsRef).then((snapshot) => {
-        if (snapshot.exists()) {
-            const settings = snapshot.val();
-            document.querySelector("h1").textContent = `${settings.week}주차 클리닉 예약`;
-            const scheduleContainer = document.getElementById("schedule");
-
-            settings.days.forEach((day) => {
-                const section = document.createElement("div");
-                section.className = "day-section";
-                section.innerHTML = `<h2>${day.date} (${day.name})</h2>`;
-                const slotContainer = document.createElement("div");
-                section.appendChild(slotContainer);
-                generateTimeSlots(day, slotContainer);
-                scheduleContainer.appendChild(section);
-            });
-        } else {
-            alert("예약 설정이 없습니다. 관리자에게 문의하세요.");
-        }
-    }).catch((error) => {
-        console.error("스케줄 로딩 오류:", error);
-    });
-}
-
+// 초기 로딩
 window.onload = loadSchedule;
