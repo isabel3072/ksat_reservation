@@ -3,21 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>시간 예약 앱</title>
-    <link rel="stylesheet" href="style.css">
+    <title>윤예원T 클리닉 예약 시스템</title>
+    <style>
+        /* 간단한 스타일링 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            margin-top: 20px;
+        }
+        .day-section {
+            margin: 30px auto;
+            max-width: 800px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #fff;
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+            min-width: 70px;
+            font-size: 14px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
-    <h1>시간 예약 앱</h1>
-    <div id="schedule">
-        <h2>일요일 (17:00 - 22:00)</h2>
-        <div class="time-slots" id="sunday"></div>
+    <h1>윤예원T 클리닉 예약 시스템</h1>
+    <div id="schedule"></div>
 
-        <h2>목요일 (22:00 - 24:00)</h2>
-        <div class="time-slots" id="thursday"></div>
+    <!-- Firebase SDK 추가 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-        <h2>금요일 (22:00 - 24:00)</h2>
-        <div class="time-slots" id="friday"></div>
-    </div>
-    <script src="app.js"></script>
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
+            authDomain: "reservation-ksat.firebaseapp.com",
+            databaseURL: "https://reservation-ksat-default-rtdb.firebaseio.com",
+            projectId: "reservation-ksat",
+            storageBucket: "reservation-ksat.appspot.com",
+            messagingSenderId: "784207883358",
+            appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf",
+            measurementId: "G-ZQDXBEPDN2"
+        };
+
+        // Firebase 초기화 및 데이터베이스 전역 변수 설정
+        const app = initializeApp(firebaseConfig);
+        window.database = getDatabase(app);
+    </script>
+
+    <!-- 예약 시스템 로직 -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>
