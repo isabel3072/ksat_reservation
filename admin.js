@@ -1,91 +1,136 @@
-import { ref, set, remove, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-// Firebase 설정
-const firebaseConfig = {
-    apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
-    authDomain: "reservation-ksat.firebaseapp.com",
-    databaseURL: "https://reservation-ksat-default-rtdb.firebaseio.com",
-    projectId: "reservation-ksat",
-    storageBucket: "reservation-ksat.firebasestorage.app",
-    messagingSenderId: "784207883358",
-    appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf",
-    measurementId: "G-ZQDXBEPDN2"
-};
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+const database = window.database;
 
-const daySettings = document.getElementById("daySettings");
+// 요소 가져오기
+const weekNumberInput = document.getElementById("weekNumber");
+const allowedDateInput = document.getElementById("allowedDate");
+const saveButton = document.getElementById("saveSettings");
+const resetButton = document.getElementById("reset");
+const daySettingsContainer = document.getElementById("daySettings");
+const addDayButton = document.getElementById("addDay");
 
-// N주차 저장
-document.getElementById("saveWeek").addEventListener("click", () => {
-    const weekNumber = document.getElementById("weekNumber").value;
-    set(ref(database, "settings/week"), weekNumber)
-        .then(() => alert("N주차 설정이 저장되었습니다."));
-});
-
-// 시간대 추가 버튼 이벤트
-document.getElementById("addDay").addEventListener("click", () => {
-    const index = daySettings.childElementCount;
-    addDayRow(index);
-});
-
-function addDayRow(index, date = "", start = "", end = "") {
-    const div = document.createElement("div");
-    div.id = `row-${index}`;
-    div.innerHTML = `
-        <input type="date" id="date-${index}" value="${date}">
-        <input type="time" id="start-${index}" value="${start}">
-        <input type="time" id="end-${index}" value="${end}">
-        <button onclick="saveDay(${index})">저장</button>
-        <button onclick="deleteDay(${index})">삭제</button>
-    `;
-    daySettings.appendChild(div);
+// N주차 제목 업데이트 함수
+function updateTitle() {
+    const weekNumber = weekNumberInput.value || 1;
+    document.title = `윤예원T 클리닉 ${weekNumber}주차 예약 시스템`;
 }
 
-// 시간대 저장
-window.saveDay = (index) => {
-    const date = document.getElementById(`date-${index}`).value;
-    const start = document.getElementById(`start-${index}`).value;
-    const end = document.getElementById(`end-${index}`).value;
+// 설정 불러오기
+function loadSettings() {
+    const settingsRef = ref(database, "admin/settings");
 
-    if (!date || !start || !end) {
-        alert("모든 값을 입력해주세요.");
-        return;
-    }
+    get(settingsRef).then((snapshot) => {
+        const settings = snapshot.val() || { days: [] };
 
-    set(ref(database, `settings/days/${date}`), { start, end })
-        .then(() => {
-            alert(`${date} 시간대가 저장되었습니다.`);
-            loadDays(); // 화면 새로고침
-        });
-};
+        weekNumberInput.value = settings.week || 1;
+        allowedDateInput.value = settings.allowedDate || "";
 
-// 시간대 삭제
-window.deleteDay = (index) => {
-    const date = document.getElementById(`date-${index}`).value;
-    if (date) {
-        remove(ref(database, `settings/days/${date}`)).then(() => {
-            document.getElementById(`row-${index}`).remove();
-            alert("시간대가 삭제되었습니다.");
-        });
-    }
-};
+        updateTitle(); // 제목 업데이트
 
-// 기존 시간대 불러오기
-function loadDays() {
-    daySettings.innerHTML = ""; // 화면 초기화
-    const daysRef = ref(database, "settings/days");
-
-    get(daysRef).then((snapshot) => {
-        const days = snapshot.val() || {};
-        let index = 0;
-        for (const [date, times] of Object.entries(days)) {
-            addDayRow(index++, date, times.start, times.end);
-        }
+        daySettingsContainer.innerHTML = ""; // 기존 설정 초기화
+        (settings.days || []).forEach((day, index) => createDayRow(day, index));
     });
 }
 
-// 페이지 로드 시 기존 데이터 불러오기
-window.onload = loadDays;
+// 요일 추가 버튼
+addDayButton.addEventListener("click", () => {
+    const index = daySettingsContainer.childElementCount;
+    createDayRow({}, index);
+});
+
+// 요일 행 생성
+function createDayRow(day, index) {
+    const div = document.createElement("div");
+    div.className = "day-row";
+    div.innerHTML = `
+        <input type="date" id="date-${index}" value="${day.date || ""}" onchange="updateDayName(${index})">
+        <input type="text" id="name-${index}" placeholder="요일" value="${day.name || ""}" readonly>
+        <input type="time" id="start-${index}" value="${day.start || ""}"> - 
+        <input type="time" id="end-${index}" value="${day.end || ""}">
+        <button onclick="removeDay(${index})">삭제</button>
+        <button onclick="showReservations('${day.date}')">예약 관리</button>
+    `;
+    daySettingsContainer.appendChild(div);
+}
+
+// 요일 자동 계산
+window.updateDayName = (index) => {
+    const days = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+    const dateInput = document.getElementById(`date-${index}`).value;
+    const nameInput = document.getElementById(`name-${index}`);
+    const date = new Date(dateInput);
+    nameInput.value = days[date.getDay()];
+};
+
+// 요일 삭제 버튼
+window.removeDay = (index) => {
+    const row = document.getElementById(`date-${index}`).parentElement;
+    daySettingsContainer.removeChild(row);
+};
+
+// 예약 관리 (예약 표시 및 취소 기능)
+window.showReservations = (date) => {
+    const reservationsRef = ref(database, "reservations");
+    get(reservationsRef).then((snapshot) => {
+        const reservations = snapshot.val() || {};
+        const reservationEntries = Object.entries(reservations).filter(([key]) => key.startsWith(date));
+
+        if (reservationEntries.length === 0) {
+            alert("해당 날짜에 예약된 항목이 없습니다.");
+            return;
+        }
+
+        // 예약 목록 표시
+        let message = "예약 목록:\n";
+        reservationEntries.forEach(([key, value], index) => {
+            message += `${index + 1}. ${key.split("-")[1]}: ${value.name}\n`;
+        });
+
+        const cancelIndex = prompt(`${message}\n취소할 예약 번호를 입력하세요 (취소하려면 아무것도 입력하지 마세요):`);
+        if (cancelIndex) {
+            const [keyToCancel] = reservationEntries[Number(cancelIndex) - 1];
+            remove(ref(database, `reservations/${keyToCancel}`));
+            alert("예약이 취소되었습니다.");
+        }
+    });
+};
+
+// 설정 저장
+saveButton.addEventListener("click", () => {
+    const days = [];
+    daySettingsContainer.childNodes.forEach((row, index) => {
+        days.push({
+            date: document.getElementById(`date-${index}`).value,
+            name: document.getElementById(`name-${index}`).value,
+            start: document.getElementById(`start-${index}`).value,
+            end: document.getElementById(`end-${index}`).value,
+        });
+    });
+
+    const settings = {
+        week: weekNumberInput.value,
+        allowedDate: allowedDateInput.value,
+        days,
+    };
+
+    set(ref(database, "admin/settings"), settings)
+        .then(() => {
+            updateTitle();
+            alert("설정이 저장되었습니다.");
+        })
+        .catch((error) => console.error("Error saving settings:", error));
+});
+
+// 초기화
+resetButton.addEventListener("click", () => {
+    if (confirm("정말로 모든 예약 및 설정을 초기화하시겠습니까?")) {
+        remove(ref(database, "admin/settings"));
+        remove(ref(database, "reservations"));
+        alert("모든 예약 및 설정이 초기화되었습니다.");
+        location.reload();
+    }
+});
+
+// 페이지 로드 시 설정 불러오기
+loadSettings();
