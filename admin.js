@@ -15,12 +15,56 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const settingsRef = ref(db, "settings");
 
+// 요소 가져오기
+const weekNumberInput = document.getElementById("weekNumber");
+const allowedDateInput = document.getElementById("allowedDate");
+const daySettingsContainer = document.getElementById("daySettings");
+const addDayButton = document.getElementById("addDay");
+
+let dayIndex = 0; // 고유 인덱스 관리
+
+// 요일 추가 버튼 클릭 이벤트
+addDayButton.addEventListener("click", () => {
+    createDayRow(dayIndex++);
+});
+
+// 요일 입력 필드 생성 함수
+function createDayRow(index) {
+    const div = document.createElement("div");
+    div.className = "day-row";
+    div.innerHTML = `
+        <input type="date" id="date-${index}" placeholder="날짜 입력">
+        <input type="text" id="name-${index}" placeholder="요일" readonly>
+        <input type="time" id="start-${index}" placeholder="시작 시간"> -
+        <input type="time" id="end-${index}" placeholder="종료 시간">
+        <button type="button" onclick="removeDayRow(${index})">삭제</button>
+    `;
+
+    daySettingsContainer.appendChild(div);
+
+    // 날짜 선택 시 자동으로 요일 계산
+    document.getElementById(`date-${index}`).addEventListener("change", () => {
+        updateDayName(index);
+    });
+}
+
+// 요일 자동 계산 함수
+function updateDayName(index) {
+    const days = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+    const dateInput = document.getElementById(`date-${index}`).value;
+    const nameInput = document.getElementById(`name-${index}`);
+    const date = new Date(dateInput);
+    nameInput.value = days[date.getDay()] || "";
+}
+
+// 요일 입력 필드 삭제 함수
+function removeDayRow(index) {
+    const row = document.getElementById(`date-${index}`).parentElement;
+    row.remove();
+}
+
 // 설정 저장 버튼 클릭 이벤트
 document.getElementById("saveSettings").addEventListener("click", () => {
-    const weekNumber = document.getElementById("weekNumber").value;
-    const allowedDate = document.getElementById("allowedDate").value;
-
-    // 요일 및 시간대 수집
     const days = [];
     document.querySelectorAll(".day-row").forEach((row, index) => {
         days.push({
@@ -31,12 +75,13 @@ document.getElementById("saveSettings").addEventListener("click", () => {
         });
     });
 
-    // Firebase에 저장
-    set(settingsRef, {
-        week: weekNumber,
-        allowedDate: allowedDate,
+    const settings = {
+        week: weekNumberInput.value,
+        allowedDate: allowedDateInput.value,
         days: days
-    }).then(() => {
+    };
+
+    set(settingsRef, settings).then(() => {
         alert("설정이 저장되었습니다.");
     }).catch((error) => {
         console.error("설정 저장 오류:", error);
