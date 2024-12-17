@@ -1,89 +1,86 @@
-import { ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+const settingsKey = "reservationSettings";
+const storageKey = "timeReservation";
+let reservations = JSON.parse(localStorage.getItem(storageKey)) || {};
 
-// Firebase 데이터베이스 가져오기
-const database = window.database;
+// 관리자 설정 불러오기
+const settings = JSON.parse(localStorage.getItem(settingsKey)) || { week: 1, days: [], allowedDate: "" };
 
-// 예약 데이터 저장 함수
-function saveReservation(date, time, name, button) {
-    const reservationKey = `${date}-${time}`;
-    const reservationRef = ref(database, `reservations/${reservationKey}`);
+// 제목에 주차 표시
+document.querySelector("h1").textContent = `윤예원T 클리닉 ${settings.week}주차 클리닉 예약`;
 
-    get(reservationRef).then((snapshot) => {
-        if (snapshot.exists()) {
-            alert("이미 예약된 시간대입니다.");
-        } else {
-            set(reservationRef, { name: name, time: time })
-                .then(() => {
-                    alert("예약이 완료되었습니다.");
-                    button.innerHTML = `${time}<br>${name}`;
-                    button.disabled = true; // 버튼 비활성화
-                })
-                .catch((error) => console.error("Error saving reservation:", error));
-        }
-    });
+// 예약 가능한 날짜 확인 함수
+function isDateAllowed() {
+    const today = new Date();
+    today.setHours(today.getHours() + 9); // UTC+9 (한국 시간 적용)
+    const localDate = today.toISOString().split("T")[0]; // YYYY-MM-DD 형식
+    return localDate === settings.allowedDate;
 }
 
-// 예약 데이터를 불러와 버튼 상태 업데이트
-function loadReservations(day) {
-    const reservationsRef = ref(database, "reservations");
-    const scheduleContainer = document.getElementById("schedule");
-    scheduleContainer.innerHTML = ""; // 기존 버튼 초기화
+// 시간 슬롯 생성 함수
+function generateTimeSlots(dayIndex, day) {
+    const container = document.getElementById(`day-${dayIndex}`);
+    container.innerHTML = "";
+    container.className = "time-slots";
 
-    const times = generateTimeSlots(day.start, day.end, 20); // 시간대 생성
-
-    onValue(reservationsRef, (snapshot) => {
-        const reservations = snapshot.val() || {};
-
-        const section = document.createElement("div");
-        section.className = "day-section";
-        section.innerHTML = `<h2>${day.date} (${day.day})</h2>`;
-
-        times.forEach((time) => {
-            const button = document.createElement("button");
-            button.textContent = time;
-
-            const reservationKey = `${day.date}-${time}`;
-            if (reservations[reservationKey]) {
-                button.innerHTML = `${time}<br>${reservations[reservationKey].name}`;
-                button.disabled = true;
-            } else {
-                button.onclick = () => {
-                    const name = prompt("이름을 입력하세요:");
-                    if (name) saveReservation(day.date, time, name, button);
-                };
-            }
-
-            section.appendChild(button);
-        });
-
-        scheduleContainer.appendChild(section);
-    });
-}
-
-// 시간대 생성 함수 (20분 간격)
-function generateTimeSlots(startTime, endTime, interval) {
-    const times = [];
-    let [startHour, startMin] = startTime.split(":").map(Number);
-    let [endHour, endMin] = endTime.split(":").map(Number);
+    let [startHour, startMin] = day.start.split(":").map(Number);
+    let [endHour, endMin] = day.end.split(":").map(Number);
 
     while (startHour < endHour || (startHour === endHour && startMin < endMin)) {
-        times.push(`${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`);
-        startMin += interval;
+        const time = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`;
+        const button = document.createElement("button");
+
+        // 예약된 시간 표시
+        if (reservations[`${day.date}-${time}`]) {
+            button.innerHTML = `${time}<br>${reservations[`${day.date}-${time}`]}`;
+            button.disabled = true;
+        } else {
+            button.innerHTML = time;
+            if (isDateAllowed()) {
+                button.addEventListener("click", () => reserveSlot(day.date, time, button));
+            } else {
+                button.disabled = true; // 예약 가능한 날짜가 아니면 비활성화
+            }
+        }
+        container.appendChild(button);
+
+        startMin += 20;
         if (startMin >= 60) {
             startHour += 1;
-            startMin -= 60;
+            startMin = 0;
         }
     }
-    return times;
 }
 
-// 예약 시스템 초기화
-document.addEventListener("DOMContentLoaded", () => {
-    const days = [
-        { date: "2024-12-21", day: "토요일", start: "13:00", end: "15:00" },
-        { date: "2024-12-23", day: "월요일", start: "17:00", end: "22:00" },
-        { date: "2024-12-25", day: "수요일", start: "22:00", end: "24:00" }
-    ];
+// 예약 함수
+function reserveSlot(date, time, button) {
+    const name = prompt("이름을 입력하세요:");
+    if (name) {
+        reservations[`${date}-${time}`] = name;
+        localStorage.setItem(storageKey, JSON.stringify(reservations));
+        button.innerHTML = `${time}<br>${name}`;
+        button.disabled = true;
+    }
+}
 
-    days.forEach((day) => loadReservations(day));
-});
+// 페이지 로드 시 설정된 시간대 반영
+window.onload = () => {
+    const container = document.getElementById("schedule");
+    container.innerHTML = "";
+    let isFirst = true;
+
+    settings.days.forEach((day, index) => {
+        const section = document.createElement("section");
+        section.className = "day-section";
+
+        if (isFirst) {
+            section.style.borderTop = "2px solid #ddd"; // 첫 날짜 위에 구분선 추가
+            section.style.marginTop = "30px";
+            section.style.paddingTop = "20px";
+            isFirst = false;
+        }
+
+        section.innerHTML = `<h2>${day.date} (${day.name})</h2><div id="day-${index}"></div>`;
+        container.appendChild(section);
+        generateTimeSlots(index, day);
+    });
+};
