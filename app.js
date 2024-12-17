@@ -23,7 +23,6 @@ function saveReservation(date, time, name, button) {
     const reservationKey = `${date}-${time}`; // 예: "2024-12-21-13:00"
     const reservationRef = ref(database, `reservations/${reservationKey}`);
 
-    // 중복 확인 후 데이터 저장
     get(reservationRef).then((snapshot) => {
         if (snapshot.exists()) {
             alert("이 시간대는 이미 예약되었습니다.");
@@ -40,18 +39,17 @@ function saveReservation(date, time, name, button) {
 }
 
 // 예약 데이터를 불러와 버튼 상태 업데이트
-function loadReservations(day) {
+function loadReservations() {
     const reservationsRef = ref(database, "reservations");
+    const scheduleContainer = document.getElementById("schedule");
+    scheduleContainer.innerHTML = ""; // 기존 버튼 초기화
 
-    // Firebase 데이터 불러오기
+    const day = { date: "2024-12-21", start: "13:00", end: "15:00" };
+    const times = generateTimeSlots(day.start, day.end, 20);
+
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
-        const scheduleContainer = document.getElementById("schedule");
 
-        scheduleContainer.innerHTML = ""; // 기존 버튼 초기화
-        const times = generateTimeSlots(day.start, day.end, 20); // 20분 간격 시간대 생성
-
-        // 시간대 버튼 생성
         times.forEach((time) => {
             const button = document.createElement("button");
             button.textContent = time;
@@ -91,18 +89,5 @@ function generateTimeSlots(startTime, endTime, interval) {
 
 // 페이지 로드 시 예약 상태 불러오기
 document.addEventListener("DOMContentLoaded", () => {
-    const days = [
-        { date: "2024-12-21", start: "13:00", end: "15:00" },
-        { date: "2024-12-23", start: "17:00", end: "22:00" },
-        { date: "2024-12-25", start: "22:00", end: "24:00" }
-    ];
-
-    days.forEach((day) => {
-        const section = document.createElement("section");
-        section.className = "day-section";
-        section.innerHTML = `<h2>${day.date}</h2><div id="schedule"></div>`;
-        document.body.appendChild(section);
-
-        loadReservations(day);
-    });
+    loadReservations(); // 예약 데이터 불러오기
 });
