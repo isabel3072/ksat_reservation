@@ -79,7 +79,17 @@ loadReservationsButton.addEventListener("click", () => {
 
 window.removeReservation = (key) => remove(ref(db, `reservations/${key}`)).then(() => alert("삭제 완료!"));
 
-resetButton.addEventListener("click", () => remove(settingsRef).then(() => loadSettings()));
+// 초기화 버튼: settings와 reservations 삭제
+resetButton.addEventListener("click", () => {
+    if (confirm("정말 모든 설정과 예약을 초기화하시겠습니까?")) {
+        Promise.all([remove(settingsRef), remove(reservationsRef)])
+            .then(() => {
+                alert("모든 설정과 예약이 초기화되었습니다.");
+                loadSettings();
+            })
+            .catch((error) => console.error("초기화 오류:", error));
+    }
+});
 
 saveButton.addEventListener("click", () => {
     const days = [...daySettingsContainer.children].map((row, i) => ({
