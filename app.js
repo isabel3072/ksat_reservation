@@ -27,13 +27,16 @@ function saveReservation(date, time, name, button) {
 function loadReservations(day) {
     const reservationsRef = ref(database, "reservations");
     const scheduleContainer = document.getElementById("schedule");
-    scheduleContainer.innerHTML = ""; // 기존 버튼 초기화
 
-    const times = generateTimeSlots(day.start, day.end, 20); // 시간대 생성
+    // **기존 내용 초기화**
+    scheduleContainer.innerHTML = "";
+
+    const times = generateTimeSlots(day.start, day.end, 20);
 
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
 
+        // 새로운 섹션 생성
         const section = document.createElement("div");
         section.className = "day-section";
         section.innerHTML = `<h2>${day.date} (${day.day})</h2>`;
@@ -56,6 +59,7 @@ function loadReservations(day) {
             section.appendChild(button);
         });
 
+        // 섹션을 스케줄 컨테이너에 추가
         scheduleContainer.appendChild(section);
     });
 }
@@ -85,5 +89,6 @@ document.addEventListener("DOMContentLoaded", () => {
         { date: "2024-12-25", day: "수요일", start: "22:00", end: "24:00" }
     ];
 
+    // **예약 데이터를 한 번만 불러오기**
     days.forEach((day) => loadReservations(day));
 });
