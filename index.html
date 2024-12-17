@@ -44,17 +44,16 @@
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
 
-        /* 버튼 스타일 */
+        /* 버튼 그리드 레이아웃 */
         .button-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(6, 1fr); /* 데스크탑: 한 줄에 최대 6개 */
+            gap: 15px; /* 버튼 사이 간격 */
             margin-top: 10px;
         }
 
         button {
             padding: 10px;
-            min-width: 70px;
             color: white;
             background-color: #007bff;
             border: none;
@@ -77,6 +76,10 @@
 
         /* 반응형 디자인 */
         @media (max-width: 768px) {
+            .button-container {
+                grid-template-columns: repeat(3, 1fr); /* 모바일: 한 줄에 최대 3개 */
+            }
+
             h1 {
                 font-size: 1.5em;
             }
