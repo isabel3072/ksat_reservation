@@ -9,28 +9,49 @@
 <body>
     <h1>Admin 예약 관리 페이지</h1>
 
-    <!-- N주차 설정 -->
+    <!-- 주차 및 예약 허용 날짜 설정 -->
     <div>
-        <h2>N주차 설정</h2>
         <label for="weekNumber">N주차:</label>
         <input type="number" id="weekNumber" min="1" value="1">
-        <button id="saveWeek">저장</button>
+        <label for="allowedDate">예약 가능 날짜:</label>
+        <input type="date" id="allowedDate">
+        <button id="saveSettings">설정 저장</button>
     </div>
 
-    <!-- 예약 가능한 시간대 설정 -->
+    <!-- 예약 시간대 설정 -->
     <div>
-        <h2>예약 시간대 설정</h2>
-        <button id="addDay">시간대 추가</button>
+        <h2>예약 가능한 요일 및 시간대 설정</h2>
         <div id="daySettings"></div>
+        <button id="addDay">요일 추가</button>
     </div>
 
-    <!-- 예약 전체 초기화 -->
+    <!-- 예약 초기화 -->
     <div>
         <h2>전체 예약 초기화</h2>
-        <button id="resetReservations">초기화</button>
+        <button id="reset">모든 예약 초기화</button>
     </div>
 
     <!-- Firebase 설정 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
+            authDomain: "reservation-ksat.firebaseapp.com",
+            databaseURL: "https://reservation-ksat-default-rtdb.firebaseio.com",
+            projectId: "reservation-ksat",
+            storageBucket: "reservation-ksat.appspot.com",
+            messagingSenderId: "784207883358",
+            appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf",
+            measurementId: "G-ZQDXBEPDN2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.database = getDatabase(app);
+    </script>
+
+    <!-- Admin 기능 -->
     <script type="module" src="admin.js"></script>
 </body>
 </html>
