@@ -1,34 +1,21 @@
-import { ref, set, get, remove, onValue, off } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { ref, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-// Firebase 데이터베이스 가져오기
 const database = window.database;
 
-// 예약 데이터를 저장하는 함수
-function saveReservation(date, time, name, button) {
-    const reservationKey = `${date}-${time}`;
-    const reservationRef = ref(database, `reservations/${reservationKey}`);
-
-    get(reservationRef).then((snapshot) => {
-        if (snapshot.exists()) {
-            alert("이미 예약된 시간대입니다.");
-        } else {
-            set(reservationRef, { name: name, time: time }).then(() => {
-                button.innerHTML = `${time}<br>${name}`;
-                button.disabled = true;
-            });
-        }
-    });
-}
-
-// 예약 데이터를 불러와 UI 업데이트
+// 예약 데이터를 불러와 UI 생성
 function loadReservations(days) {
     const reservationsRef = ref(database, "reservations");
+    const settingsRef = ref(database, "admin/settings");
     const scheduleContainer = document.getElementById("schedule");
 
-    // Firebase 이벤트 리스너 중복 방지
-    off(reservationsRef);
+    // N주차 값을 불러와 제목에 반영
+    get(settingsRef).then((snapshot) => {
+        const settings = snapshot.val() || {};
+        const weekNumber = settings.week || 1; // 기본값 1주차
+        document.getElementById("title").innerText = `윤예원T 클리닉 ${weekNumber}주차 예약 시스템`;
+    });
 
-    // 데이터 변경 시 UI 업데이트
+    // 예약 데이터 가져와 화면 표시
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
 
@@ -39,9 +26,6 @@ function loadReservations(days) {
             const section = document.createElement("div");
             section.className = "day-section";
             section.innerHTML = `<h2>${day.date} (${day.day})</h2>`;
-
-            const gridContainer = document.createElement("div");
-            gridContainer.className = "grid-container";
 
             const times = generateTimeSlots(day.start, day.end, 20);
 
@@ -60,12 +44,21 @@ function loadReservations(days) {
                     };
                 }
 
-                gridContainer.appendChild(button);
+                section.appendChild(button);
             });
 
-            section.appendChild(gridContainer);
             scheduleContainer.appendChild(section);
         });
+    });
+}
+
+// 예약 저장 함수
+function saveReservation(date, time, name, button) {
+    const reservationRef = ref(database, `reservations/${date}-${time}`);
+    set(reservationRef, { name, time }).then(() => {
+        alert("예약이 완료되었습니다.");
+        button.innerHTML = `${time}<br>${name}`;
+        button.disabled = true;
     });
 }
 
@@ -86,7 +79,7 @@ function generateTimeSlots(startTime, endTime, interval) {
     return times;
 }
 
-// 페이지 로드 시 예약 상태 불러오기
+// 페이지 로드 시 예약 데이터 불러오기
 document.addEventListener("DOMContentLoaded", () => {
     const days = [
         { date: "2024-12-21", day: "토요일", start: "13:00", end: "15:00" },
