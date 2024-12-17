@@ -1,31 +1,50 @@
-import { ref, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 const database = window.database;
 
-// 예약 데이터를 불러와 UI 생성
-function loadReservations(days) {
-    const reservationsRef = ref(database, "reservations");
+// N주차 제목 업데이트 함수
+function updateTitle() {
     const settingsRef = ref(database, "admin/settings");
-    const scheduleContainer = document.getElementById("schedule");
-
-    // N주차 값을 불러와 제목에 반영
     get(settingsRef).then((snapshot) => {
         const settings = snapshot.val() || {};
         const weekNumber = settings.week || 1; // 기본값 1주차
         document.getElementById("title").innerText = `윤예원T 클리닉 ${weekNumber}주차 예약 시스템`;
     });
+}
 
-    // 예약 데이터 가져와 화면 표시
+// 예약 저장 함수
+function saveReservation(date, time, name, button) {
+    const reservationRef = ref(database, `reservations/${date}-${time}`);
+    set(reservationRef, { name: name, time: time })
+        .then(() => {
+            alert("예약이 완료되었습니다.");
+            button.innerHTML = `${time}<br>${name}`;
+            button.disabled = true;
+        })
+        .catch((error) => {
+            console.error("예약 저장 중 오류 발생:", error);
+            alert("예약 저장에 실패했습니다. 다시 시도해주세요.");
+        });
+}
+
+// 예약 데이터 불러와 UI 생성
+function loadReservations(days) {
+    const reservationsRef = ref(database, "reservations");
+    const scheduleContainer = document.getElementById("schedule");
+
+    // UI 초기화
+    scheduleContainer.innerHTML = "";
+
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
-
-        // UI 초기화
-        scheduleContainer.innerHTML = "";
 
         days.forEach((day) => {
             const section = document.createElement("div");
             section.className = "day-section";
             section.innerHTML = `<h2>${day.date} (${day.day})</h2>`;
+
+            const gridContainer = document.createElement("div");
+            gridContainer.className = "grid-container";
 
             const times = generateTimeSlots(day.start, day.end, 20);
 
@@ -44,21 +63,12 @@ function loadReservations(days) {
                     };
                 }
 
-                section.appendChild(button);
+                gridContainer.appendChild(button);
             });
 
+            section.appendChild(gridContainer);
             scheduleContainer.appendChild(section);
         });
-    });
-}
-
-// 예약 저장 함수
-function saveReservation(date, time, name, button) {
-    const reservationRef = ref(database, `reservations/${date}-${time}`);
-    set(reservationRef, { name, time }).then(() => {
-        alert("예약이 완료되었습니다.");
-        button.innerHTML = `${time}<br>${name}`;
-        button.disabled = true;
     });
 }
 
@@ -79,7 +89,7 @@ function generateTimeSlots(startTime, endTime, interval) {
     return times;
 }
 
-// 페이지 로드 시 예약 데이터 불러오기
+// 페이지 로드 시 예약 데이터 불러오기 및 제목 업데이트
 document.addEventListener("DOMContentLoaded", () => {
     const days = [
         { date: "2024-12-21", day: "토요일", start: "13:00", end: "15:00" },
@@ -87,5 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
         { date: "2024-12-25", day: "수요일", start: "22:00", end: "24:00" }
     ];
 
+    updateTitle();
     loadReservations(days);
 });
