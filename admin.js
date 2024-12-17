@@ -1,8 +1,6 @@
 import { ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 const database = window.database;
-const storageKey = "timeReservation";
-const settingsKey = "reservationSettings";
 
 // 요소 가져오기
 const weekNumberInput = document.getElementById("weekNumber");
@@ -12,6 +10,12 @@ const resetButton = document.getElementById("reset");
 const daySettingsContainer = document.getElementById("daySettings");
 const addDayButton = document.getElementById("addDay");
 
+// N주차 제목 업데이트 함수
+function updateTitle() {
+    const weekNumber = weekNumberInput.value || 1;
+    document.title = `윤예원T 클리닉 ${weekNumber}주차 예약 시스템`;
+}
+
 // 설정 불러오기
 function loadSettings() {
     const settingsRef = ref(database, "admin/settings");
@@ -20,7 +24,9 @@ function loadSettings() {
         const settings = snapshot.val() || { days: [] };
 
         weekNumberInput.value = settings.week || 1;
-        allowedDateInput.value = settings.allowedDate || ""; // 예약 가능 날짜 불러오기
+        allowedDateInput.value = settings.allowedDate || "";
+
+        updateTitle(); // 제목 업데이트
 
         daySettingsContainer.innerHTML = ""; // 기존 설정 초기화
         (settings.days || []).forEach((day, index) => createDayRow(day, index));
@@ -70,15 +76,16 @@ window.showReservations = (date) => {
         const reservations = snapshot.val() || {};
         const reservationEntries = Object.entries(reservations).filter(([key]) => key.startsWith(date));
 
-        let message = "예약 목록:\n";
-        reservationEntries.forEach(([key, name], index) => {
-            message += `${index + 1}. ${key.split("-")[1]}: ${name.name}\n`;
-        });
-
         if (reservationEntries.length === 0) {
             alert("해당 날짜에 예약된 항목이 없습니다.");
             return;
         }
+
+        // 예약 목록 표시
+        let message = "예약 목록:\n";
+        reservationEntries.forEach(([key, value], index) => {
+            message += `${index + 1}. ${key.split("-")[1]}: ${value.name}\n`;
+        });
 
         const cancelIndex = prompt(`${message}\n취소할 예약 번호를 입력하세요 (취소하려면 아무것도 입력하지 마세요):`);
         if (cancelIndex) {
@@ -108,7 +115,10 @@ saveButton.addEventListener("click", () => {
     };
 
     set(ref(database, "admin/settings"), settings)
-        .then(() => alert("설정이 저장되었습니다."))
+        .then(() => {
+            updateTitle();
+            alert("설정이 저장되었습니다.");
+        })
         .catch((error) => console.error("Error saving settings:", error));
 });
 
