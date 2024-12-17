@@ -3,39 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>관리자 페이지</title>
+    <title>Admin 예약 관리</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>관리자 페이지</h1>
+    <h1>Admin 예약 관리 페이지</h1>
 
-    <!-- 주차 설정 -->
-    <section>
-        <h2>주차 설정</h2>
-        <label for="weekNumber">주차 (N): </label>
+    <!-- 주차 및 예약 허용 날짜 설정 -->
+    <div>
+        <label for="weekNumber">N주차:</label>
         <input type="number" id="weekNumber" min="1" value="1">
-    </section>
-
-    <!-- 예약 가능한 날짜 설정 -->
-    <section>
-        <h2>예약 가능한 날짜 설정</h2>
-        <label for="allowedDate">예약 가능 날짜: </label>
+        <label for="allowedDate">예약 가능 날짜:</label>
         <input type="date" id="allowedDate">
-    </section>
+        <button id="saveSettings">설정 저장</button>
+    </div>
 
-    <!-- 요일 및 시간 설정 -->
-    <section>
-        <h2>요일 및 시간 설정</h2>
+    <!-- 예약 시간대 설정 -->
+    <div>
+        <h2>예약 가능한 요일 및 시간대 설정</h2>
         <div id="daySettings"></div>
         <button id="addDay">요일 추가</button>
-    </section>
+    </div>
 
-    <!-- 버튼 -->
-    <section>
-        <button id="saveSettings">설정 저장</button>
-        <button id="reset">초기화</button>
-    </section>
+    <!-- 예약 초기화 -->
+    <div>
+        <h2>전체 예약 초기화</h2>
+        <button id="reset">모든 예약 초기화</button>
+    </div>
 
-    <script src="admin.js"></script>
+    <!-- Firebase 설정 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
+            authDomain: "reservation-ksat.firebaseapp.com",
+            databaseURL: "https://reservation-ksat-default-rtdb.firebaseio.com",
+            projectId: "reservation-ksat",
+            storageBucket: "reservation-ksat.appspot.com",
+            messagingSenderId: "784207883358",
+            appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf",
+            measurementId: "G-ZQDXBEPDN2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.database = getDatabase(app);
+    </script>
+
+    <!-- Admin 기능 -->
+    <script type="module" src="admin.js"></script>
 </body>
 </html>
