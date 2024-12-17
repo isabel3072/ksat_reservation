@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 페이지</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>관리자 페이지</h1>
+
+    <!-- 주차 설정 -->
+    <section>
+        <h2>주차 설정</h2>
+        <label for="weekNumber">주차 (N): </label>
+        <input type="number" id="weekNumber" min="1" value="1">
+    </section>
+
+    <!-- 예약 가능한 날짜 설정 -->
+    <section>
+        <h2>예약 가능한 날짜 설정</h2>
+        <label for="allowedDate">예약 가능 날짜: </label>
+        <input type="date" id="allowedDate">
+    </section>
+
+    <!-- 요일 및 시간 설정 -->
+    <section>
+        <h2>요일 및 시간 설정</h2>
+        <div id="daySettings"></div>
+        <button id="addDay">요일 추가</button>
+    </section>
+
+    <!-- 버튼 -->
+    <section>
+        <button id="saveSettings">설정 저장</button>
+        <button id="reset">초기화</button>
+    </section>
+
+    <script src="admin.js"></script>
+</body>
+</html>
