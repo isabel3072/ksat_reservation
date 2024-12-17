@@ -1,3 +1,6 @@
+import { ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+const database = window.database;
 const storageKey = "timeReservation";
 const settingsKey = "reservationSettings";
 
@@ -11,12 +14,17 @@ const addDayButton = document.getElementById("addDay");
 
 // 설정 불러오기
 function loadSettings() {
-    const settings = JSON.parse(localStorage.getItem(settingsKey)) || { days: [] };
-    weekNumberInput.value = settings.week || 1;
-    allowedDateInput.value = settings.allowedDate || ""; // 예약 가능 날짜 불러오기
+    const settingsRef = ref(database, "admin/settings");
 
-    daySettingsContainer.innerHTML = ""; // 기존 설정 초기화
-    (settings.days || []).forEach((day, index) => createDayRow(day, index));
+    get(settingsRef).then((snapshot) => {
+        const settings = snapshot.val() || { days: [] };
+
+        weekNumberInput.value = settings.week || 1;
+        allowedDateInput.value = settings.allowedDate || ""; // 예약 가능 날짜 불러오기
+
+        daySettingsContainer.innerHTML = ""; // 기존 설정 초기화
+        (settings.days || []).forEach((day, index) => createDayRow(day, index));
+    });
 }
 
 // 요일 추가 버튼
@@ -41,43 +49,45 @@ function createDayRow(day, index) {
 }
 
 // 요일 자동 계산
-function updateDayName(index) {
+window.updateDayName = (index) => {
     const days = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
     const dateInput = document.getElementById(`date-${index}`).value;
     const nameInput = document.getElementById(`name-${index}`);
     const date = new Date(dateInput);
     nameInput.value = days[date.getDay()];
-}
+};
 
 // 요일 삭제 버튼
-function removeDay(index) {
+window.removeDay = (index) => {
     const row = document.getElementById(`date-${index}`).parentElement;
     daySettingsContainer.removeChild(row);
-}
+};
 
 // 예약 관리 (예약 표시 및 취소 기능)
-function showReservations(date) {
-    const reservations = JSON.parse(localStorage.getItem(storageKey)) || {};
-    const reservationEntries = Object.entries(reservations).filter(([key]) => key.startsWith(date));
+window.showReservations = (date) => {
+    const reservationsRef = ref(database, "reservations");
+    get(reservationsRef).then((snapshot) => {
+        const reservations = snapshot.val() || {};
+        const reservationEntries = Object.entries(reservations).filter(([key]) => key.startsWith(date));
 
-    let message = "예약 목록:\n";
-    reservationEntries.forEach(([key, name], index) => {
-        message += `${index + 1}. ${key.split("-")[1]}: ${name}\n`;
+        let message = "예약 목록:\n";
+        reservationEntries.forEach(([key, name], index) => {
+            message += `${index + 1}. ${key.split("-")[1]}: ${name.name}\n`;
+        });
+
+        if (reservationEntries.length === 0) {
+            alert("해당 날짜에 예약된 항목이 없습니다.");
+            return;
+        }
+
+        const cancelIndex = prompt(`${message}\n취소할 예약 번호를 입력하세요 (취소하려면 아무것도 입력하지 마세요):`);
+        if (cancelIndex) {
+            const [keyToCancel] = reservationEntries[Number(cancelIndex) - 1];
+            remove(ref(database, `reservations/${keyToCancel}`));
+            alert("예약이 취소되었습니다.");
+        }
     });
-
-    if (reservationEntries.length === 0) {
-        alert("해당 날짜에 예약된 항목이 없습니다.");
-        return;
-    }
-
-    const cancelIndex = prompt(`${message}\n취소할 예약 번호를 입력하세요 (취소하려면 아무것도 입력하지 마세요):`);
-    if (cancelIndex) {
-        const [keyToCancel] = reservationEntries[Number(cancelIndex) - 1];
-        delete reservations[keyToCancel];
-        localStorage.setItem(storageKey, JSON.stringify(reservations));
-        alert("예약이 취소되었습니다.");
-    }
-}
+};
 
 // 설정 저장
 saveButton.addEventListener("click", () => {
@@ -93,20 +103,23 @@ saveButton.addEventListener("click", () => {
 
     const settings = {
         week: weekNumberInput.value,
-        allowedDate: allowedDateInput.value, // 예약 가능한 날짜 저장
-        days
+        allowedDate: allowedDateInput.value,
+        days,
     };
 
-    localStorage.setItem(settingsKey, JSON.stringify(settings));
-    alert("설정이 저장되었습니다.");
+    set(ref(database, "admin/settings"), settings)
+        .then(() => alert("설정이 저장되었습니다."))
+        .catch((error) => console.error("Error saving settings:", error));
 });
 
 // 초기화
 resetButton.addEventListener("click", () => {
-    localStorage.removeItem(storageKey);
-    localStorage.removeItem(settingsKey);
-    alert("모든 예약 및 설정이 초기화되었습니다.");
-    location.reload();
+    if (confirm("정말로 모든 예약 및 설정을 초기화하시겠습니까?")) {
+        remove(ref(database, "admin/settings"));
+        remove(ref(database, "reservations"));
+        alert("모든 예약 및 설정이 초기화되었습니다.");
+        location.reload();
+    }
 });
 
 // 페이지 로드 시 설정 불러오기
