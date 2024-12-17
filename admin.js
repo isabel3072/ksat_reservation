@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
@@ -20,13 +20,35 @@ const weekNumberInput = document.getElementById("weekNumber");
 const allowedDateInput = document.getElementById("allowedDate");
 const daySettingsContainer = document.getElementById("daySettings");
 const addDayButton = document.getElementById("addDay");
+const resetButton = document.getElementById("resetSettings"); // 초기화 버튼 추가
 
-let dayIndex = 0; // 고유 인덱스 관리
+let dayIndex = 0;
 
-// 요일 추가 버튼 클릭 이벤트
+// 요일 추가 버튼 이벤트
 addDayButton.addEventListener("click", () => {
     createDayRow(dayIndex++);
 });
+
+// 초기화 버튼 이벤트
+resetButton.addEventListener("click", () => {
+    if (confirm("정말 모든 설정을 초기화하시겠습니까?")) {
+        // Firebase 데이터 삭제
+        remove(settingsRef).then(() => {
+            alert("모든 설정이 초기화되었습니다.");
+            resetPage();
+        }).catch((error) => {
+            console.error("초기화 실패:", error);
+        });
+    }
+});
+
+// 화면 초기화 함수
+function resetPage() {
+    weekNumberInput.value = 1;
+    allowedDateInput.value = "";
+    daySettingsContainer.innerHTML = "";
+    dayIndex = 0;
+}
 
 // 요일 입력 필드 생성 함수
 function createDayRow(index) {
@@ -39,10 +61,9 @@ function createDayRow(index) {
         <input type="time" id="end-${index}" placeholder="종료 시간">
         <button type="button" onclick="removeDayRow(${index})">삭제</button>
     `;
-
     daySettingsContainer.appendChild(div);
 
-    // 날짜 선택 시 자동으로 요일 계산
+    // 날짜 선택 시 자동 요일 설정
     document.getElementById(`date-${index}`).addEventListener("change", () => {
         updateDayName(index);
     });
@@ -57,13 +78,13 @@ function updateDayName(index) {
     nameInput.value = days[date.getDay()] || "";
 }
 
-// 요일 입력 필드 삭제 함수
+// 요일 삭제 함수
 function removeDayRow(index) {
     const row = document.getElementById(`date-${index}`).parentElement;
     row.remove();
 }
 
-// 설정 저장 버튼 클릭 이벤트
+// 설정 저장 버튼 이벤트
 document.getElementById("saveSettings").addEventListener("click", () => {
     const days = [];
     document.querySelectorAll(".day-row").forEach((row, index) => {
