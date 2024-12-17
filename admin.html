@@ -9,26 +9,36 @@
 <body>
     <h1>Admin 예약 관리 페이지</h1>
 
-    <!-- 주차 및 예약 허용 날짜 설정 -->
+    <!-- N주차 설정 -->
     <div>
+        <h2>N주차 설정</h2>
         <label for="weekNumber">N주차:</label>
         <input type="number" id="weekNumber" min="1" value="1">
-        <label for="allowedDate">예약 가능 날짜:</label>
-        <input type="date" id="allowedDate">
-        <button id="saveSettings">설정 저장</button>
+        <button id="saveWeek">N주차 저장</button>
     </div>
 
-    <!-- 예약 시간대 설정 -->
+    <!-- 예약 가능한 시간대 설정 -->
     <div>
-        <h2>예약 가능한 요일 및 시간대 설정</h2>
-        <div id="daySettings"></div>
+        <h2>예약 시간대 설정</h2>
         <button id="addDay">요일 추가</button>
+        <div id="daySettings"></div>
     </div>
 
-    <!-- 예약 초기화 -->
+    <!-- 날짜별 예약 관리 -->
+    <div>
+        <h2>날짜별 예약 관리</h2>
+        <label for="selectDate">날짜 선택:</label>
+        <input type="date" id="selectDate">
+        <button id="manageReservationsButton">예약 관리</button>
+    </div>
+
+    <!-- 예약 목록 표시 -->
+    <div id="reservations-container"></div>
+
+    <!-- 예약 전체 초기화 -->
     <div>
         <h2>전체 예약 초기화</h2>
-        <button id="reset">모든 예약 초기화</button>
+        <button id="resetReservations">모든 예약 초기화</button>
     </div>
 
     <!-- Firebase 설정 -->
@@ -36,17 +46,18 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getDatabase } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
+        // Firebase 설정
         const firebaseConfig = {
-            apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
-            authDomain: "reservation-ksat.firebaseapp.com",
-            databaseURL: "https://reservation-ksat-default-rtdb.firebaseio.com",
-            projectId: "reservation-ksat",
-            storageBucket: "reservation-ksat.appspot.com",
-            messagingSenderId: "784207883358",
-            appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf",
-            measurementId: "G-ZQDXBEPDN2"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
+        // Firebase 초기화
         const app = initializeApp(firebaseConfig);
         window.database = getDatabase(app);
     </script>
