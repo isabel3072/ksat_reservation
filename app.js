@@ -3,7 +3,7 @@ import { ref, set, get, remove, onValue, off } from "https://www.gstatic.com/fir
 // Firebase 데이터베이스 가져오기
 const database = window.database;
 
-// 예약 데이터 저장 함수
+// 예약 데이터를 저장하는 함수
 function saveReservation(date, time, name, button) {
     const reservationKey = `${date}-${time}`;
     const reservationRef = ref(database, `reservations/${reservationKey}`);
@@ -13,7 +13,6 @@ function saveReservation(date, time, name, button) {
             alert("이미 예약된 시간대입니다.");
         } else {
             set(reservationRef, { name: name, time: time }).then(() => {
-                alert("예약이 완료되었습니다.");
                 button.innerHTML = `${time}<br>${name}`;
                 button.disabled = true;
             });
@@ -21,19 +20,19 @@ function saveReservation(date, time, name, button) {
     });
 }
 
-// 예약 데이터를 불러와 UI 생성
+// 예약 데이터를 불러와 UI 업데이트
 function loadReservations(days) {
     const reservationsRef = ref(database, "reservations");
     const scheduleContainer = document.getElementById("schedule");
 
-    // 기존 이벤트 리스너 제거 (중복 방지)
+    // Firebase 이벤트 리스너 중복 방지
     off(reservationsRef);
 
-    // Firebase 데이터 가져오기
+    // 데이터 변경 시 UI 업데이트
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
 
-        // **UI 초기화**
+        // UI 초기화
         scheduleContainer.innerHTML = "";
 
         days.forEach((day) => {
@@ -46,7 +45,6 @@ function loadReservations(days) {
 
             const times = generateTimeSlots(day.start, day.end, 20);
 
-            // 시간대 버튼 생성
             times.forEach((time) => {
                 const button = document.createElement("button");
                 button.textContent = time;
@@ -71,7 +69,7 @@ function loadReservations(days) {
     });
 }
 
-// 시간대 생성 함수 (20분 간격)
+// 시간대 생성 함수
 function generateTimeSlots(startTime, endTime, interval) {
     const times = [];
     let [startHour, startMin] = startTime.split(":").map(Number);
@@ -88,17 +86,13 @@ function generateTimeSlots(startTime, endTime, interval) {
     return times;
 }
 
-// 예약 시스템 초기화
+// 페이지 로드 시 예약 상태 불러오기
 document.addEventListener("DOMContentLoaded", () => {
     const days = [
         { date: "2024-12-21", day: "토요일", start: "13:00", end: "15:00" },
         { date: "2024-12-23", day: "월요일", start: "17:00", end: "22:00" },
         { date: "2024-12-25", day: "수요일", start: "22:00", end: "24:00" }
     ];
-
-    const scheduleContainer = document.createElement("div");
-    scheduleContainer.id = "schedule";
-    document.body.appendChild(scheduleContainer);
 
     loadReservations(days);
 });
