@@ -1,4 +1,4 @@
-import { ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { ref, set, get, remove, onValue, off } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 // Firebase 데이터베이스 가져오기
 const database = window.database;
@@ -21,28 +21,20 @@ function saveReservation(date, time, name, button) {
     });
 }
 
-// 예약 데이터 삭제 함수 (Admin에서 호출)
-function cancelReservation(date, time) {
-    const reservationKey = `${date}-${time}`;
-    const reservationRef = ref(database, `reservations/${reservationKey}`);
-
-    remove(reservationRef)
-        .then(() => {
-            alert("예약이 취소되었습니다.");
-        })
-        .catch((error) => console.error("Error deleting reservation:", error));
-}
-
 // 예약 데이터를 불러와 UI 생성
 function loadReservations(days) {
     const reservationsRef = ref(database, "reservations");
     const scheduleContainer = document.getElementById("schedule");
 
-    // 기존 UI 초기화
-    scheduleContainer.innerHTML = "";
+    // 기존 이벤트 리스너 제거 (중복 방지)
+    off(reservationsRef);
 
+    // Firebase 데이터 가져오기
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
+
+        // **UI 초기화**
+        scheduleContainer.innerHTML = "";
 
         days.forEach((day) => {
             const section = document.createElement("div");
@@ -54,6 +46,7 @@ function loadReservations(days) {
 
             const times = generateTimeSlots(day.start, day.end, 20);
 
+            // 시간대 버튼 생성
             times.forEach((time) => {
                 const button = document.createElement("button");
                 button.textContent = time;
