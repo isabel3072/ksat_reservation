@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
 import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
+// Firebase 설정
 const firebaseConfig = {
     apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
     authDomain: "reservation-ksat.firebaseapp.com",
@@ -23,6 +24,9 @@ function generateTimeSlots(day, container) {
     let [startHour, startMin] = day.start.split(":").map(Number);
     let [endHour, endMin] = day.end.split(":").map(Number);
 
+    // 예약 가능한 날짜인지 확인
+    const isAllowedDay = day.date === allowedDate;
+
     while (startHour < endHour || (startHour === endHour && startMin < endMin)) {
         const time = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`;
         const button = document.createElement("button");
@@ -30,21 +34,22 @@ function generateTimeSlots(day, container) {
 
         const slotRef = ref(db, `reservations/${day.date}-${time}`);
 
-        // 예약 상태 확인 및 예약 가능 날짜 검증
+        // 예약 상태 확인
         onValue(slotRef, (snapshot) => {
             if (snapshot.exists()) {
                 button.innerHTML = `${time}<br>${snapshot.val()}`;
-                button.disabled = true; // 이미 예약된 시간
-            } else if (isDateAllowed(day.date)) {
-                button.disabled = false;
+                button.disabled = true; // 이미 예약됨
+            } else if (isAllowedDay) {
+                button.disabled = false; // 예약 가능한 날짜
             } else {
-                button.disabled = true; // 예약 가능한 날짜가 아니면 비활성화
+                button.disabled = true; // 예약 불가능한 날짜
                 button.textContent = `${time} (예약 불가)`;
             }
         });
 
+        // 클릭 이벤트: 예약 가능 날짜에만 예약
         button.addEventListener("click", () => {
-            if (isDateAllowed(day.date)) {
+            if (isAllowedDay) {
                 reserveSlot(day.date, time, button);
             } else {
                 alert("이 날짜는 예약할 수 없습니다.");
@@ -59,11 +64,6 @@ function generateTimeSlots(day, container) {
             startMin = 0;
         }
     }
-}
-
-// 예약 가능한 날짜 확인 함수
-function isDateAllowed(date) {
-    return allowedDate === date; // 설정된 allowedDate와 일치하는 날짜만 true 반환
 }
 
 // 예약 함수
