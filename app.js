@@ -1,96 +1,40 @@
-import { ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-const database = window.database;
+const firebaseConfig = { /* Firebase 설정 */ };
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-// 예약 데이터 저장 함수
-function saveReservation(date, time, name, button) {
-    const reservationKey = `${date}-${time}`;
-    const reservationRef = ref(database, `reservations/${reservationKey}`);
+// 예약 가능한 시간대 불러오기
+function loadSchedule() {
+    const daysRef = ref(database, "settings/days");
+    const schedule = document.getElementById("schedule");
+    schedule.innerHTML = "";
 
-    set(reservationRef, { name: name, time: time })
-        .then(() => {
-            alert("예약이 완료되었습니다.");
-            button.innerHTML = `${time}<br>${name}`;
-            button.disabled = true;
-        })
-        .catch((error) => {
-            console.error("예약 저장 오류:", error.message);
-            alert("예약 저장에 실패했습니다.");
-        });
-}
-
-// 예약 데이터 불러와 UI 생성
-function loadReservations(days) {
-    const reservationsRef = ref(database, "reservations");
-    const scheduleContainer = document.getElementById("schedule");
-
-    // 기존 이벤트 리스너 제거 (복제 방지)
-    off(reservationsRef);
-
-    onValue(reservationsRef, (snapshot) => {
-        const reservations = snapshot.val() || {};
-
-        // 기존 UI 초기화
-        scheduleContainer.innerHTML = "";
-
-        days.forEach((day) => {
+    onValue(daysRef, (snapshot) => {
+        const days = snapshot.val() || {};
+        Object.keys(days).forEach((date) => {
+            const { start, end } = days[date];
             const section = document.createElement("div");
-            section.className = "day-section";
-            section.innerHTML = `<h2>${day.date} (${day.day})</h2>`;
+            section.innerHTML = `<h2>${date}</h2>`;
+            schedule.appendChild(section);
 
-            const gridContainer = document.createElement("div");
-            gridContainer.className = "grid-container";
+            const container = document.createElement("div");
+            let [hour, min] = start.split(":").map(Number);
 
-            const times = generateTimeSlots(day.start, day.end, 20);
-
-            times.forEach((time) => {
+            while (`${hour}:${min}` < end) {
                 const button = document.createElement("button");
-                button.textContent = time;
+                button.textContent = `${hour}:${min}`;
+                button.onclick = () => alert("예약 기능 구현 필요");
+                container.appendChild(button);
 
-                const reservationKey = `${day.date}-${time}`;
-                if (reservations[reservationKey]) {
-                    button.innerHTML = `${time}<br>${reservations[reservationKey].name}`;
-                    button.disabled = true;
-                } else {
-                    button.onclick = () => {
-                        const name = prompt("이름을 입력하세요:");
-                        if (name) saveReservation(day.date, time, name, button);
-                    };
-                }
-
-                gridContainer.appendChild(button);
-            });
-
-            section.appendChild(gridContainer);
-            scheduleContainer.appendChild(section);
+                min += 20;
+                if (min >= 60) { hour++; min = 0; }
+            }
+            section.appendChild(container);
         });
     });
 }
 
-// 시간대 생성 함수
-function generateTimeSlots(startTime, endTime, interval) {
-    const times = [];
-    let [startHour, startMin] = startTime.split(":").map(Number);
-    let [endHour, endMin] = endTime.split(":").map(Number);
-
-    while (startHour < endHour || (startHour === endHour && startMin < endMin)) {
-        times.push(`${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`);
-        startMin += interval;
-        if (startMin >= 60) {
-            startHour += 1;
-            startMin -= 60;
-        }
-    }
-    return times;
-}
-
-// 페이지 로드 시 예약 데이터 불러오기
-document.addEventListener("DOMContentLoaded", () => {
-    const days = [
-        { date: "2024-12-21", day: "토요일", start: "13:00", end: "15:00" },
-        { date: "2024-12-23", day: "월요일", start: "17:00", end: "22:00" },
-        { date: "2024-12-25", day: "수요일", start: "22:00", end: "24:00" }
-    ];
-
-    loadReservations(days);
-});
+window.onload = loadSchedule;
