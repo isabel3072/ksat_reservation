@@ -49,11 +49,10 @@ function loadReservations(days) {
             section.className = "day-section";
             section.innerHTML = `<h2>${day.date} (${day.day})</h2>`;
 
-            const times = generateTimeSlots(day.start, day.end, 20);
-
-            // 시간대 버튼 생성
             const gridContainer = document.createElement("div");
             gridContainer.className = "grid-container";
+
+            const times = generateTimeSlots(day.start, day.end, 20);
 
             times.forEach((time) => {
                 const button = document.createElement("button");
