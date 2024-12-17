@@ -1,3 +1,4 @@
+// Firebase 모듈 가져오기
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
 import { getDatabase, ref, get, set, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
@@ -11,7 +12,6 @@ const firebaseConfig = {
     messagingSenderId: "784207883358",
     appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -29,15 +29,16 @@ function generateTimeSlots(day, container) {
         const button = document.createElement("button");
         button.textContent = time;
 
-        // Firebase에서 해당 시간 예약 상태를 실시간 확인
         const slotRef = ref(db, `reservations/${day.date}-${time}`);
+
+        // 실시간 예약 상태 확인
         onValue(slotRef, (snapshot) => {
             if (snapshot.exists()) {
                 button.innerHTML = `${time}<br>${snapshot.val()}`;
                 button.disabled = true;
             } else {
                 button.disabled = false;
-                button.innerHTML = time;
+                button.textContent = time;
             }
         });
 
@@ -53,7 +54,7 @@ function generateTimeSlots(day, container) {
     }
 }
 
-// 예약 함수 (Firebase 트랜잭션 사용)
+// 예약 함수: Firebase 트랜잭션을 사용해 중복 예약 방지
 function reserveSlot(date, time, button) {
     const name = prompt("이름을 입력하세요:");
     if (!name) return;
@@ -61,7 +62,7 @@ function reserveSlot(date, time, button) {
     const slotRef = ref(db, `reservations/${date}-${time}`);
     runTransaction(slotRef, (currentData) => {
         if (currentData === null) {
-            return name; // 예약 진행
+            return name; // 예약 성공
         } else {
             alert("이미 예약된 시간입니다.");
             return; // 예약 실패
@@ -69,15 +70,13 @@ function reserveSlot(date, time, button) {
     }).then((result) => {
         if (result.committed) {
             alert("예약이 완료되었습니다.");
-            button.innerHTML = `${time}<br>${name}`;
-            button.disabled = true;
         }
     }).catch((error) => {
-        console.error("예약 중 오류 발생: ", error);
+        console.error("예약 중 오류 발생:", error);
     });
 }
 
-// 스케줄 불러오기
+// 스케줄 로드 및 화면 표시
 function loadSchedule() {
     get(settingsRef).then((snapshot) => {
         if (snapshot.exists()) {
@@ -94,7 +93,11 @@ function loadSchedule() {
                 generateTimeSlots(day, slotContainer);
                 scheduleContainer.appendChild(section);
             });
+        } else {
+            alert("예약 설정이 없습니다. 관리자에게 문의하세요.");
         }
+    }).catch((error) => {
+        console.error("스케줄 로딩 오류:", error);
     });
 }
 
