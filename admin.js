@@ -26,6 +26,8 @@ const resetButton = document.getElementById("resetSettings");
 const reservationDateInput = document.getElementById("reservationDate");
 const loadReservationsButton = document.getElementById("loadReservations");
 const reservationListContainer = document.getElementById("reservationList");
+const downloadTableButton = document.getElementById("downloadTable");
+const tableContainer = document.getElementById("tableContainer");
 
 let dayIndex = 0;
 
@@ -91,6 +93,7 @@ resetButton.addEventListener("click", () => {
     }
 });
 
+// 설정 저장
 saveButton.addEventListener("click", () => {
     const days = [...daySettingsContainer.children].map((row, i) => ({
         date: row.querySelector(`#date-${i}`).value,
@@ -100,5 +103,67 @@ saveButton.addEventListener("click", () => {
     }));
     set(settingsRef, { week: weekNumberInput.value, allowedDate: allowedDateInput.value, days });
 });
+
+// 예약 표 다운로드
+downloadTableButton.addEventListener("click", () => {
+    get(settingsRef).then((settingsSnapshot) => {
+        get(reservationsRef).then((reservationsSnapshot) => {
+            const settings = settingsSnapshot.val();
+            const reservations = reservationsSnapshot.val() || {};
+            renderTable(settings.days, reservations);
+            downloadTableAsImage();
+        });
+    });
+});
+
+// 표 렌더링
+function renderTable(days, reservations) {
+    tableContainer.innerHTML = "";
+    const table = document.createElement("table");
+
+    // 테이블 헤더
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML = `<th>시간대</th>` + days.map(day => `<th>${day.date} (${day.name})</th>`).join("");
+    table.appendChild(headerRow);
+
+    // 시간대 생성
+    const timeSlots = [];
+    days.forEach(day => {
+        let [hour, minute] = day.start.split(":").map(Number);
+        const [endHour, endMinute] = day.end.split(":").map(Number);
+        while (hour < endHour || (hour === endHour && minute < endMinute)) {
+            const time = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+            if (!timeSlots.includes(time)) timeSlots.push(time);
+            minute += 20;
+            if (minute >= 60) {
+                hour++;
+                minute = 0;
+            }
+        }
+    });
+
+    // 테이블 데이터
+    timeSlots.forEach(time => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${time}</td>` + days.map(day => {
+            const key = `${day.date}-${time}`;
+            return `<td>${reservations[key] || ""}</td>`;
+        }).join("");
+        table.appendChild(row);
+    });
+
+    tableContainer.appendChild(table);
+    tableContainer.classList.remove("hidden");
+}
+
+// PNG 다운로드
+function downloadTableAsImage() {
+    html2canvas(tableContainer).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "reservation_list.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    });
+}
 
 loadSettings();
