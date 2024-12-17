@@ -14,7 +14,9 @@ function updateTitle() {
 
 // 예약 저장 함수
 function saveReservation(date, time, name, button) {
-    const reservationRef = ref(database, `reservations/${date}-${time}`);
+    const reservationKey = `${date}-${time}`;
+    const reservationRef = ref(database, `reservations/${reservationKey}`);
+
     set(reservationRef, { name: name, time: time })
         .then(() => {
             alert("예약이 완료되었습니다.");
@@ -22,8 +24,8 @@ function saveReservation(date, time, name, button) {
             button.disabled = true;
         })
         .catch((error) => {
-            console.error("예약 저장 중 오류 발생:", error);
-            alert("예약 저장에 실패했습니다. 다시 시도해주세요.");
+            console.error("Firebase 저장 오류:", error);
+            alert("예약 저장에 실패했습니다. 다시 시도해 주세요.");
         });
 }
 
