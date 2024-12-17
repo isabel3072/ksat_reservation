@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getDatabase, ref, set, remove, onValue, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { getDatabase, ref, set, remove, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
@@ -16,64 +16,79 @@ const db = getDatabase(app);
 const settingsRef = ref(db, "settings");
 const reservationsRef = ref(db, "reservations");
 
-// 요소 가져오기
+// 요소 참조
+const weekNumberInput = document.getElementById("weekNumber");
+const allowedDateInput = document.getElementById("allowedDate");
+const daySettingsContainer = document.getElementById("daySettings");
+const addDayButton = document.getElementById("addDay");
+const saveButton = document.getElementById("saveSettings");
+const resetButton = document.getElementById("resetSettings");
 const reservationDateInput = document.getElementById("reservationDate");
 const loadReservationsButton = document.getElementById("loadReservations");
 const reservationListContainer = document.getElementById("reservationList");
 
-// 예약 조회 버튼 이벤트
-loadReservationsButton.addEventListener("click", () => {
-    const date = reservationDateInput.value;
-    if (!date) {
-        alert("날짜를 선택하세요.");
-        return;
-    }
+let dayIndex = 0;
 
-    loadReservations(date);
-});
+// 요일 추가
+addDayButton.addEventListener("click", () => createDayRow(dayIndex++));
 
-// 예약 목록 불러오기
-function loadReservations(date) {
-    reservationListContainer.innerHTML = "<p>로딩 중...</p>";
-    get(ref(db, "reservations")).then((snapshot) => {
+function createDayRow(index, day = {}) {
+    const row = document.createElement("div");
+    row.className = "day-row";
+    row.innerHTML = `
+        <input type="date" id="date-${index}" value="${day.date || ""}">
+        <input type="text" id="name-${index}" value="${day.name || ""}" readonly>
+        <input type="time" id="start-${index}" value="${day.start || ""}"> -
+        <input type="time" id="end-${index}" value="${day.end || ""}">
+        <button onclick="this.parentElement.remove()">삭제</button>
+    `;
+    row.querySelector(`#date-${index}`).addEventListener("change", () => {
+        const days = ["일", "월", "화", "수", "목", "금", "토"];
+        const date = new Date(row.querySelector(`#date-${index}`).value);
+        row.querySelector(`#name-${index}`).value = days[date.getDay()] || "";
+    });
+    daySettingsContainer.appendChild(row);
+}
+
+// 설정 불러오기
+function loadSettings() {
+    onValue(settingsRef, (snapshot) => {
         if (snapshot.exists()) {
-            const reservations = snapshot.val();
-            const filteredReservations = Object.entries(reservations)
-                .filter(([key]) => key.startsWith(date));
-
-            if (filteredReservations.length === 0) {
-                reservationListContainer.innerHTML = "<p>예약이 없습니다.</p>";
-                return;
-            }
-
-            reservationListContainer.innerHTML = "";
-            filteredReservations.forEach(([key, name]) => {
-                const time = key.split("-")[1];
-                const div = document.createElement("div");
-                div.className = "reservation-item";
-                div.innerHTML = `
-                    <span>${time}: ${name}</span>
-                    <button onclick="cancelReservation('${key}')">취소</button>
-                `;
-                reservationListContainer.appendChild(div);
-            });
-        } else {
-            reservationListContainer.innerHTML = "<p>예약이 없습니다.</p>";
+            const data = snapshot.val();
+            weekNumberInput.value = data.week || 1;
+            allowedDateInput.value = data.allowedDate || "";
+            daySettingsContainer.innerHTML = "";
+            dayIndex = 0;
+            (data.days || []).forEach((day) => createDayRow(dayIndex++, day));
         }
-    }).catch((error) => {
-        console.error("예약 불러오기 오류:", error);
-        reservationListContainer.innerHTML = "<p>오류가 발생했습니다.</p>";
     });
 }
 
-// 예약 취소 함수
-window.cancelReservation = (key) => {
-    if (confirm("정말로 이 예약을 취소하시겠습니까?")) {
-        remove(ref(db, `reservations/${key}`)).then(() => {
-            alert("예약이 취소되었습니다.");
-            loadReservations(reservationDateInput.value); // 화면 갱신
-        }).catch((error) => {
-            console.error("예약 취소 오류:", error);
-        });
-    }
-};
+// 예약 조회
+loadReservationsButton.addEventListener("click", () => {
+    const date = reservationDateInput.value;
+    reservationListContainer.innerHTML = "<p>로딩 중...</p>";
+    get(reservationsRef).then((snapshot) => {
+        const reservations = snapshot.val();
+        const filtered = Object.entries(reservations || {}).filter(([key]) => key.startsWith(date));
+        reservationListContainer.innerHTML = filtered.map(([key, name]) =>
+            `<div>${key.split("-")[1]}: ${name} <button onclick="removeReservation('${key}')">삭제</button></div>`
+        ).join("") || "<p>예약이 없습니다.</p>";
+    });
+});
+
+window.removeReservation = (key) => remove(ref(db, `reservations/${key}`)).then(() => alert("삭제 완료!"));
+
+resetButton.addEventListener("click", () => remove(settingsRef).then(() => loadSettings()));
+
+saveButton.addEventListener("click", () => {
+    const days = [...daySettingsContainer.children].map((row, i) => ({
+        date: row.querySelector(`#date-${i}`).value,
+        name: row.querySelector(`#name-${i}`).value,
+        start: row.querySelector(`#start-${i}`).value,
+        end: row.querySelector(`#end-${i}`).value,
+    }));
+    set(settingsRef, { week: weekNumberInput.value, allowedDate: allowedDateInput.value, days });
+});
+
+loadSettings();
