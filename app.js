@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
 import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-// Firebase 설정
 const firebaseConfig = {
     apiKey: "AIzaSyDAoEruzjRbNSTL-1e5nJf3iFyh0797WFM",
     authDomain: "reservation-ksat.firebaseapp.com",
@@ -32,6 +31,10 @@ function generateTimeSlots(day, container) {
     let [startHour, startMin] = day.start.split(":").map(Number);
     let [endHour, endMin] = day.end.split(":").map(Number);
 
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "button-container"; // 버튼을 감싸는 컨테이너
+    container.appendChild(buttonContainer);
+
     while (startHour < endHour || (startHour === endHour && startMin < endMin)) {
         const time = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`;
         const button = document.createElement("button");
@@ -39,15 +42,15 @@ function generateTimeSlots(day, container) {
 
         const slotRef = ref(db, `reservations/${day.date}-${time}`);
 
-        // 예약 상태 확인 및 날짜 검증
+        // 예약 상태 확인
         onValue(slotRef, (snapshot) => {
             if (snapshot.exists()) {
                 button.innerHTML = `${time}<br>${snapshot.val()}`;
-                button.disabled = true; // 이미 예약됨
+                button.disabled = true;
             } else if (isAllowedToday) {
-                button.disabled = false; // 예약 가능한 날짜일 때 활성화
+                button.disabled = false;
             } else {
-                button.disabled = true; // 예약 불가능
+                button.disabled = true;
             }
         });
 
@@ -60,7 +63,7 @@ function generateTimeSlots(day, container) {
             }
         });
 
-        container.appendChild(button);
+        buttonContainer.appendChild(button); // 버튼을 button-container에 추가
 
         startMin += 20;
         if (startMin >= 60) {
@@ -98,19 +101,10 @@ function loadSchedule() {
     onValue(settingsRef, (snapshot) => {
         if (snapshot.exists()) {
             const settings = snapshot.val();
-            allowedDate = settings.allowedDate; // 예약 가능한 날짜 설정
-            const today = getCurrentKoreanDate(); // 한국 기준 오늘 날짜
-            isAllowedToday = today === allowedDate; // 오늘이 예약 가능한 날짜인지 확인
+            allowedDate = settings.allowedDate;
+            const today = getCurrentKoreanDate();
+            isAllowedToday = today === allowedDate;
 
-            // 예약 불가 메시지 추가
-            const infoMessage = document.createElement("p");
-            infoMessage.textContent = isAllowedToday
-                ? ""
-                : `예약 가능 시간은 ${allowedDate}입니다.`;
-            infoMessage.style.color = "red";
-            document.querySelector("h1").insertAdjacentElement("afterend", infoMessage);
-
-            // 설정된 날짜별 시간 슬롯 생성
             settings.days.forEach((day) => {
                 const section = document.createElement("div");
                 section.className = "day-section";
