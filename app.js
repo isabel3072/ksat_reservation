@@ -1,4 +1,4 @@
-import { ref, set, get, onValue, off } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 // Firebase 데이터베이스 가져오기
 const database = window.database;
@@ -28,22 +28,23 @@ function loadReservations(day) {
     const reservationsRef = ref(database, "reservations");
     const scheduleContainer = document.getElementById("schedule");
 
-    // **기존 내용 완전히 초기화**
-    scheduleContainer.innerHTML = "";
+    // **해당 섹션이 이미 있으면 삭제**
+    const existingSection = document.querySelector(`[data-date='${day.date}']`);
+    if (existingSection) existingSection.remove();
+
+    // 섹션 초기화 및 생성
+    const section = document.createElement("div");
+    section.className = "day-section";
+    section.setAttribute("data-date", day.date); // 중복 생성 방지
+    section.innerHTML = `<h2>${day.date} (${day.day})</h2>`;
 
     const times = generateTimeSlots(day.start, day.end, 20);
-
-    // Firebase 이벤트 등록 전, 기존 이벤트 핸들러 제거
-    off(reservationsRef);
 
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
 
-        // 새로운 섹션 생성
-        const section = document.createElement("div");
-        section.className = "day-section";
-        section.innerHTML = `<h2>${day.date} (${day.day})</h2>`;
-
+        // 버튼 추가
+        section.innerHTML = `<h2>${day.date} (${day.day})</h2>`; // 헤더만 유지
         times.forEach((time) => {
             const button = document.createElement("button");
             button.textContent = time;
@@ -62,7 +63,7 @@ function loadReservations(day) {
             section.appendChild(button);
         });
 
-        scheduleContainer.appendChild(section);
+        scheduleContainer.appendChild(section); // 섹션 추가
     });
 }
 
@@ -91,6 +92,9 @@ document.addEventListener("DOMContentLoaded", () => {
         { date: "2024-12-25", day: "수요일", start: "22:00", end: "24:00" }
     ];
 
-    // 예약 데이터를 한 번만 불러오기
+    const scheduleContainer = document.createElement("div");
+    scheduleContainer.id = "schedule";
+    document.body.appendChild(scheduleContainer);
+
     days.forEach((day) => loadReservations(day));
 });
