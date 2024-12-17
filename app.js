@@ -1,4 +1,4 @@
-import { ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { ref, set, get, onValue, off } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 // Firebase 데이터베이스 가져오기
 const database = window.database;
@@ -28,10 +28,13 @@ function loadReservations(day) {
     const reservationsRef = ref(database, "reservations");
     const scheduleContainer = document.getElementById("schedule");
 
-    // **기존 내용 초기화**
+    // **기존 내용 완전히 초기화**
     scheduleContainer.innerHTML = "";
 
     const times = generateTimeSlots(day.start, day.end, 20);
+
+    // Firebase 이벤트 등록 전, 기존 이벤트 핸들러 제거
+    off(reservationsRef);
 
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
@@ -59,7 +62,6 @@ function loadReservations(day) {
             section.appendChild(button);
         });
 
-        // 섹션을 스케줄 컨테이너에 추가
         scheduleContainer.appendChild(section);
     });
 }
@@ -89,6 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
         { date: "2024-12-25", day: "수요일", start: "22:00", end: "24:00" }
     ];
 
-    // **예약 데이터를 한 번만 불러오기**
+    // 예약 데이터를 한 번만 불러오기
     days.forEach((day) => loadReservations(day));
 });
