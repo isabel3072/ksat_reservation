@@ -22,12 +22,12 @@
         /* 제목 스타일 */
         h1 {
             margin-top: 20px;
-            font-size: 2em;
+            font-size: 2.5em;
             color: #007bff;
             font-weight: 700;
         }
 
-        /* 날짜 섹션 */
+        /* 날짜 섹션 스타일 */
         .day-section {
             margin: 30px auto;
             max-width: 800px;
@@ -47,8 +47,8 @@
         /* 버튼 그리드 레이아웃 */
         .button-container {
             display: grid;
-            grid-template-columns: repeat(6, 1fr); /* 데스크탑: 한 줄에 최대 6개 */
-            gap: 15px; /* 버튼 사이 간격 */
+            grid-template-columns: repeat(6, 1fr); /* 데스크탑: 최대 6개 버튼 */
+            gap: 20px; /* 버튼 사이 간격 */
             margin-top: 10px;
         }
 
@@ -74,14 +74,14 @@
             transform: none;
         }
 
-        /* 반응형 디자인 */
+        /* 반응형 디자인: 모바일 화면 */
         @media (max-width: 768px) {
             .button-container {
-                grid-template-columns: repeat(3, 1fr); /* 모바일: 한 줄에 최대 3개 */
+                grid-template-columns: repeat(3, 1fr); /* 모바일: 최대 3개 버튼 */
             }
 
             h1 {
-                font-size: 1.5em;
+                font-size: 2em;
             }
 
             .day-section {
