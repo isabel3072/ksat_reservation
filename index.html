@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>윤예원T 클리닉 예약 시스템</title>
-    <!-- CSS 파일 연결 -->
-    <link rel="stylesheet" href="style.css">
+    <title>예약 시스템</title>
 </head>
 <body>
+    <!-- 제목 -->
     <h1>윤예원T 클리닉 예약 시스템</h1>
+
+    <!-- 예약 스케줄 표시 영역 -->
     <div id="schedule"></div>
 
-    <!-- Firebase SDK 추가 -->
+    <!-- Firebase 설정 -->
     <script type="module">
+        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
         // Firebase 설정
         const firebaseConfig = {
@@ -22,18 +24,35 @@
             authDomain: "reservation-ksat.firebaseapp.com",
             databaseURL: "https://reservation-ksat-default-rtdb.firebaseio.com",
             projectId: "reservation-ksat",
-            storageBucket: "reservation-ksat.appspot.com",
+            storageBucket: "reservation-ksat.firebasestorage.app",
             messagingSenderId: "784207883358",
             appId: "1:784207883358:web:4bb46fcbfa0a973e88d8cf",
             measurementId: "G-ZQDXBEPDN2"
         };
 
-        // Firebase 초기화 및 데이터베이스 전역 변수 설정
+        // Firebase 초기화
         const app = initializeApp(firebaseConfig);
-        window.database = getDatabase(app);
+        const database = getDatabase(app);
+
+        // 예약 데이터 저장 예제
+        function saveReservation(date, time, name) {
+            const reservationRef = ref(database, `reservations/${date}-${time}`);
+            set(reservationRef, { name: name, time: time })
+                .then(() => alert("예약이 완료되었습니다."))
+                .catch((error) => console.error("Error saving reservation: ", error));
+        }
+
+        // 예약 버튼 클릭 이벤트 예제
+        document.addEventListener("DOMContentLoaded", () => {
+            const scheduleContainer = document.getElementById("schedule");
+            const sampleButton = document.createElement("button");
+            sampleButton.textContent = "13:00 예약하기";
+            sampleButton.onclick = () => saveReservation("2024-06-12", "13:00", "홍길동");
+            scheduleContainer.appendChild(sampleButton);
+        });
     </script>
 
-    <!-- 예약 시스템 로직 -->
-    <script type="module" src="app.js"></script>
+    <!-- 여기에 app.js 파일 추가 -->
+    <script src="app.js"></script>
 </body>
 </html>
