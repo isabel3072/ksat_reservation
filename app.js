@@ -1,36 +1,21 @@
-import { ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 const database = window.database;
 
-// N주차 제목 업데이트 함수
-function updateTitle() {
-    const settingsRef = ref(database, "admin/settings");
-    get(settingsRef).then((snapshot) => {
-        const settings = snapshot.val() || {};
-        const weekNumber = settings.week || 1; // 기본값 1주차
-        document.getElementById("title").innerText = `윤예원T 클리닉 ${weekNumber}주차 예약 시스템`;
-    });
-}
-
-// 예약 저장 함수
+// 예약 데이터 저장 함수
 function saveReservation(date, time, name, button) {
-    const reservationKey = `${date}-${time}`; // 경로 키
+    const reservationKey = `${date}-${time}`;
     const reservationRef = ref(database, `reservations/${reservationKey}`);
 
-    console.log("Firebase 저장 경로:", `reservations/${reservationKey}`);
-    console.log("저장할 데이터:", { name: name, time: time });
-
-    // 예약 데이터 저장
     set(reservationRef, { name: name, time: time })
         .then(() => {
-            console.log("예약 저장 성공");
             alert("예약이 완료되었습니다.");
             button.innerHTML = `${time}<br>${name}`;
             button.disabled = true;
         })
         .catch((error) => {
-            console.error("Firebase 저장 오류:", error.message);
-            alert("예약 저장에 실패했습니다. 다시 시도해주세요.");
+            console.error("예약 저장 오류:", error.message);
+            alert("예약 저장에 실패했습니다.");
         });
 }
 
@@ -39,11 +24,14 @@ function loadReservations(days) {
     const reservationsRef = ref(database, "reservations");
     const scheduleContainer = document.getElementById("schedule");
 
-    // UI 초기화
-    scheduleContainer.innerHTML = "";
+    // 기존 이벤트 리스너 제거 (복제 방지)
+    off(reservationsRef);
 
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
+
+        // 기존 UI 초기화
+        scheduleContainer.innerHTML = "";
 
         days.forEach((day) => {
             const section = document.createElement("div");
@@ -96,7 +84,7 @@ function generateTimeSlots(startTime, endTime, interval) {
     return times;
 }
 
-// 페이지 로드 시 예약 데이터 불러오기 및 제목 업데이트
+// 페이지 로드 시 예약 데이터 불러오기
 document.addEventListener("DOMContentLoaded", () => {
     const days = [
         { date: "2024-12-21", day: "토요일", start: "13:00", end: "15:00" },
@@ -104,6 +92,5 @@ document.addEventListener("DOMContentLoaded", () => {
         { date: "2024-12-25", day: "수요일", start: "22:00", end: "24:00" }
     ];
 
-    updateTitle();
     loadReservations(days);
 });
