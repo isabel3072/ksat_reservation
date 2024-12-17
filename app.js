@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { getDatabase, ref, onValue, runTransaction, remove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 // Firebase 설정
 const firebaseConfig = {
@@ -15,6 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const settingsRef = ref(db, "settings");
+const reservationsRef = ref(db, "reservations");
 
 // 전역 변수
 let allowedDate = null; // 예약 가능한 날짜 설정값
@@ -36,19 +37,15 @@ function generateTimeSlots(day, container) {
         const time = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`;
         const button = document.createElement("button");
         button.textContent = time;
+        button.disabled = !isAllowedToday;
 
         const slotRef = ref(db, `reservations/${day.date}-${time}`);
 
-        // 예약 상태 확인 및 한국 시간 검증
+        // 예약 상태 확인
         onValue(slotRef, (snapshot) => {
             if (snapshot.exists()) {
                 button.innerHTML = `${time}<br>${snapshot.val()}`;
                 button.disabled = true; // 이미 예약됨
-            } else if (isAllowedToday) {
-                button.disabled = false; // 예약 가능한 날짜일 때 활성화
-            } else {
-                button.disabled = true; // 예약 불가능
-                button.textContent = `${time} (예약 불가)`;
             }
         });
 
@@ -56,8 +53,6 @@ function generateTimeSlots(day, container) {
         button.addEventListener("click", () => {
             if (isAllowedToday) {
                 reserveSlot(day.date, time, button);
-            } else {
-                alert("오늘은 예약이 불가능한 날입니다.");
             }
         });
 
@@ -105,6 +100,12 @@ function loadSchedule() {
 
             document.querySelector("h1").textContent = `${settings.week || 1}주차 클리닉 예약`;
 
+            const message = document.createElement("p");
+            message.textContent = isAllowedToday
+                ? "오늘은 예약이 가능합니다."
+                : `예약 가능 시간은 ${allowedDate}입니다.`;
+            document.querySelector("h1").insertAdjacentElement("afterend", message);
+
             settings.days.forEach((day) => {
                 const section = document.createElement("div");
                 section.className = "day-section";
@@ -119,5 +120,15 @@ function loadSchedule() {
         }
     });
 }
+
+// 초기화 버튼 이벤트 (Firebase에서 settings 및 reservations 삭제)
+document.getElementById("resetSettings").addEventListener("click", () => {
+    if (confirm("정말 모든 설정과 예약을 초기화하시겠습니까?")) {
+        remove(settingsRef)
+            .then(() => remove(reservationsRef))
+            .then(() => alert("모든 설정과 예약이 초기화되었습니다."))
+            .catch((error) => console.error("초기화 오류:", error));
+    }
+});
 
 window.onload = loadSchedule;
