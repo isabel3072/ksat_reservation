@@ -40,4 +40,46 @@ function updateDayName(index) {
 }
 
 function removeDay(element) {
-    daySettingsContainer.remo
+    daySettingsContainer.removeChild(element);
+}
+
+saveButton.addEventListener("click", () => {
+    const days = [];
+    daySettingsContainer.childNodes.forEach((row, index) => {
+        days.push({
+            date: document.getElementById(`date-${index}`).value,
+            name: document.getElementById(`name-${index}`).value,
+            start: document.getElementById(`start-${index}`).value,
+            end: document.getElementById(`end-${index}`).value,
+        });
+    });
+
+    const settings = {
+        week: weekNumberInput.value,
+        allowedDate: allowedDateInput.value,
+        days
+    };
+
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
+    alert("설정이 저장되었습니다.");
+});
+
+resetButton.addEventListener("click", () => {
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(settingsKey);
+    alert("모든 예약 및 설정이 초기화되었습니다.");
+    location.reload();
+});
+
+// 설정 불러오기
+function loadSettings() {
+    const settings = JSON.parse(localStorage.getItem(settingsKey)) || { days: [] };
+    weekNumberInput.value = settings.week || 1;
+    allowedDateInput.value = settings.allowedDate || "";
+    daySettingsContainer.innerHTML = "";
+    dayIndex = 0;
+
+    settings.days.forEach((day) => createDayRow(day, dayIndex++));
+}
+
+loadSettings();
