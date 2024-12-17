@@ -64,6 +64,21 @@ function loadSettings() {
     });
 }
 
+// 예약 조회
+loadReservationsButton.addEventListener("click", () => {
+    const date = reservationDateInput.value;
+    reservationListContainer.innerHTML = "<p>로딩 중...</p>";
+    get(reservationsRef).then((snapshot) => {
+        const reservations = snapshot.val();
+        const filtered = Object.entries(reservations || {}).filter(([key]) => key.startsWith(date));
+        reservationListContainer.innerHTML = filtered.map(([key, name]) =>
+            `<div>${key.split("-")[1]}: ${name} <button onclick="removeReservation('${key}')">삭제</button></div>`
+        ).join("") || "<p>예약이 없습니다.</p>";
+    });
+});
+
+window.removeReservation = (key) => remove(ref(db, `reservations/${key}`)).then(() => alert("삭제 완료!"));
+
 // 예약 표 다운로드
 downloadTableButton.addEventListener("click", () => {
     get(settingsRef).then((settingsSnapshot) => {
