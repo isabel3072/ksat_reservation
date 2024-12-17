@@ -14,7 +14,7 @@
         <h2>N주차 설정</h2>
         <label for="weekNumber">N주차:</label>
         <input type="number" id="weekNumber" min="1" value="1">
-        <button id="saveWeek">N주차 저장</button>
+        <button id="saveWeek">저장</button>
     </div>
 
     <!-- 예약 가능한 시간대 설정 -->
@@ -24,45 +24,13 @@
         <div id="daySettings"></div>
     </div>
 
-    <!-- 날짜별 예약 관리 -->
-    <div>
-        <h2>날짜별 예약 관리</h2>
-        <label for="selectDate">날짜 선택:</label>
-        <input type="date" id="selectDate">
-        <button id="manageReservationsButton">예약 관리</button>
-    </div>
-
-    <!-- 예약 목록 표시 -->
-    <div id="reservations-container"></div>
-
     <!-- 예약 전체 초기화 -->
     <div>
         <h2>전체 예약 초기화</h2>
-        <button id="resetReservations">모든 예약 초기화</button>
+        <button id="resetReservations">초기화</button>
     </div>
 
     <!-- Firebase 설정 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
-
-        // Firebase 설정
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-
-        // Firebase 초기화
-        const app = initializeApp(firebaseConfig);
-        window.database = getDatabase(app);
-    </script>
-
-    <!-- Admin 기능 -->
     <script type="module" src="admin.js"></script>
 </body>
 </html>
