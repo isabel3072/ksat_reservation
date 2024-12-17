@@ -1,41 +1,37 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>관리자 페이지</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <h1>관리자 페이지</h1>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-    <!-- 주차 설정 -->
-    <section>
-        <h2>주차 설정</h2>
-        <label for="weekNumber">주차 (N): </label>
-        <input type="number" id="weekNumber" min="1" value="1">
-    </section>
+const firebaseConfig = { /* 기존 설정 유지 */ };
 
-    <!-- 예약 가능한 날짜 설정 -->
-    <section>
-        <h2>예약 가능한 날짜 설정</h2>
-        <label for="allowedDate">예약 가능 날짜: </label>
-        <input type="date" id="allowedDate">
-    </section>
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const settingsRef = ref(db, "settings");
 
-    <!-- 요일 및 시간 설정 -->
-    <section>
-        <h2>요일 및 시간 설정</h2>
-        <div id="daySettings"></div>
-        <button id="addDay">요일 추가</button>
-    </section>
+document.getElementById("saveSettings").addEventListener("click", () => {
+    const days = [];
+    document.querySelectorAll(".day-row").forEach((row, index) => {
+        days.push({
+            date: document.getElementById(`date-${index}`).value,
+            name: document.getElementById(`name-${index}`).value,
+            start: document.getElementById(`start-${index}`).value,
+            end: document.getElementById(`end-${index}`).value,
+        });
+    });
 
-    <!-- 버튼 -->
-    <section>
-        <button id="saveSettings">설정 저장</button>
-        <button id="reset">초기화</button>
-    </section>
+    const settings = {
+        week: document.getElementById("weekNumber").value,
+        allowedDate: document.getElementById("allowedDate").value,
+        days
+    };
 
-    <script src="admin.js"></script>
-</body>
-</html>
+    set(settingsRef, settings).then(() => alert("설정이 저장되었습니다."));
+});
+
+function loadSettings() {
+    get(settingsRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            // 불러오기 로직
+        }
+    });
+}
+loadSettings();
