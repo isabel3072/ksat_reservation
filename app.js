@@ -1,4 +1,4 @@
-import { ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+import { ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
 // Firebase 데이터베이스 가져오기
 const database = window.database;
@@ -8,12 +8,10 @@ function saveReservation(date, time, name, button) {
     const reservationKey = `${date}-${time}`;
     const reservationRef = ref(database, `reservations/${reservationKey}`);
 
-    // 중복 예약 확인
     get(reservationRef).then((snapshot) => {
         if (snapshot.exists()) {
             alert("이미 예약된 시간대입니다.");
         } else {
-            // 예약 데이터 저장
             set(reservationRef, { name: name, time: time }).then(() => {
                 alert("예약이 완료되었습니다.");
                 button.innerHTML = `${time}<br>${name}`;
@@ -23,7 +21,19 @@ function saveReservation(date, time, name, button) {
     });
 }
 
-// 날짜별 예약 데이터를 불러와 UI 생성
+// 예약 데이터 삭제 함수 (Admin에서 호출)
+function cancelReservation(date, time) {
+    const reservationKey = `${date}-${time}`;
+    const reservationRef = ref(database, `reservations/${reservationKey}`);
+
+    remove(reservationRef)
+        .then(() => {
+            alert("예약이 취소되었습니다.");
+        })
+        .catch((error) => console.error("Error deleting reservation:", error));
+}
+
+// 예약 데이터를 불러와 UI 생성
 function loadReservations(days) {
     const reservationsRef = ref(database, "reservations");
     const scheduleContainer = document.getElementById("schedule");
@@ -31,17 +41,20 @@ function loadReservations(days) {
     // 기존 UI 초기화
     scheduleContainer.innerHTML = "";
 
-    // Firebase 데이터 가져오기
     onValue(reservationsRef, (snapshot) => {
         const reservations = snapshot.val() || {};
 
-        // 날짜별 섹션 생성
         days.forEach((day) => {
             const section = document.createElement("div");
             section.className = "day-section";
             section.innerHTML = `<h2>${day.date} (${day.day})</h2>`;
 
             const times = generateTimeSlots(day.start, day.end, 20);
+
+            // 시간대 버튼 생성
+            const gridContainer = document.createElement("div");
+            gridContainer.className = "grid-container";
+
             times.forEach((time) => {
                 const button = document.createElement("button");
                 button.textContent = time;
@@ -57,9 +70,10 @@ function loadReservations(days) {
                     };
                 }
 
-                section.appendChild(button);
+                gridContainer.appendChild(button);
             });
 
+            section.appendChild(gridContainer);
             scheduleContainer.appendChild(section);
         });
     });
