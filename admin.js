@@ -69,32 +69,42 @@ window.removeDay = (index) => {
     daySettingsContainer.removeChild(row);
 };
 
-// 예약 관리 버튼 수정
-window.showReservations = (date) => {
+// 예약 데이터 불러오기 및 표시
+function showReservations(date) {
     const reservationsRef = ref(database, "reservations");
+
     get(reservationsRef).then((snapshot) => {
         const reservations = snapshot.val() || {};
-        const reservationEntries = Object.entries(reservations).filter(([key]) => key.startsWith(date));
+        const filteredReservations = Object.entries(reservations).filter(([key]) => key.startsWith(date));
 
-        if (reservationEntries.length === 0) {
+        if (filteredReservations.length === 0) {
             alert("해당 날짜에 예약된 항목이 없습니다.");
             return;
         }
 
-        // 예약 목록 표시
         let message = "예약 목록:\n";
-        reservationEntries.forEach(([key, value], index) => {
-            message += `${index + 1}. ${key.split("-")[1]}: ${value.name}\n`;
+        filteredReservations.forEach(([key, value], index) => {
+            const time = key.split("-")[1];
+            message += `${index + 1}. ${time} - ${value.name}\n`;
         });
 
-        const cancelIndex = prompt(`${message}\n취소할 예약 번호를 입력하세요 (취소하려면 아무것도 입력하지 마세요):`);
+        const cancelIndex = prompt(`${message}\n취소할 예약 번호를 입력하세요 (취소하지 않으려면 취소).`);
         if (cancelIndex) {
-            const [keyToCancel] = reservationEntries[Number(cancelIndex) - 1];
-            remove(ref(database, `reservations/${keyToCancel}`));
-            alert("예약이 취소되었습니다.");
+            const [keyToCancel] = filteredReservations[Number(cancelIndex) - 1];
+            remove(ref(database, `reservations/${keyToCancel}`)).then(() => {
+                alert("예약이 취소되었습니다.");
+            });
         }
     });
-};
+}
+
+// 예약 관리 버튼 이벤트
+document.querySelectorAll(".manage-reservations").forEach((button) => {
+    button.addEventListener("click", () => {
+        const date = button.getAttribute("data-date");
+        showReservations(date);
+    });
+});
 
 
 // 설정 저장
