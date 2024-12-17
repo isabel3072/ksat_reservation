@@ -69,7 +69,7 @@ window.removeDay = (index) => {
     daySettingsContainer.removeChild(row);
 };
 
-// 예약 관리 (예약 표시 및 취소 기능)
+// 예약 관리 버튼 수정
 window.showReservations = (date) => {
     const reservationsRef = ref(database, "reservations");
     get(reservationsRef).then((snapshot) => {
@@ -95,6 +95,7 @@ window.showReservations = (date) => {
         }
     });
 };
+
 
 // 설정 저장
 saveButton.addEventListener("click", () => {
