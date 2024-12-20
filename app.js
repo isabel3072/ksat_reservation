@@ -17,6 +17,7 @@ const settingsRef = ref(db, "settings");
 
 // 전역 변수
 let allowedDate = null; // 예약 가능한 날짜 설정값
+let weekNumber = null; // 주차 설정값
 let isAllowedToday = false; // 오늘이 예약 가능한 날인지 여부
 
 // 한국 시간 기준 현재 날짜를 가져오는 함수
@@ -24,6 +25,16 @@ function getCurrentKoreanDate() {
     const now = new Date();
     now.setHours(now.getHours() + 9); // UTC+9로 변환 (한국 시간)
     return now.toISOString().split("T")[0]; // YYYY-MM-DD 형식 반환
+}
+
+// 화면 상단 정보 업데이트
+function updateReservationInfo() {
+    const infoElement = document.getElementById("reservation-info");
+    if (weekNumber && allowedDate) {
+        infoElement.textContent = `${weekNumber}주차 클리닉 예약 일시는 ${allowedDate}입니다.`;
+    } else {
+        infoElement.textContent = "예약 정보를 불러오는 중입니다...";
+    }
 }
 
 // 시간 슬롯 생성 함수
@@ -101,9 +112,12 @@ function loadSchedule() {
     onValue(settingsRef, (snapshot) => {
         if (snapshot.exists()) {
             const settings = snapshot.val();
-            allowedDate = settings.allowedDate;
+            weekNumber = settings.week || "1";
+            allowedDate = settings.allowedDate || null;
             const today = getCurrentKoreanDate();
             isAllowedToday = today === allowedDate;
+
+            updateReservationInfo();
 
             settings.days.forEach((day) => {
                 const section = document.createElement("div");
@@ -116,6 +130,7 @@ function loadSchedule() {
             });
         } else {
             console.log("예약 설정이 없습니다.");
+            updateReservationInfo();
         }
     });
 }
