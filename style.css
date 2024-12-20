@@ -44,7 +44,6 @@ button:disabled {
     cursor: not-allowed;
 }
 
-
 /* Admin 페이지 스타일 추가 */
 .day-row {
     display: flex;
@@ -98,3 +97,6 @@ button:hover {
     background-color: #0056b3;
 }
 
+.table-container {
+    margin-top: 20px; /* "표 다운로드" 버튼과 표 사이 간격 */
+}
